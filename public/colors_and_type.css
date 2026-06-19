@@ -1,0 +1,199 @@
+/* ============================================================
+   AgriAfrica Design System — Colors & Type
+   Editorial agri-tech: warm bone paper, deep field greens,
+   African clay + harvest gold accents. Borrows the calm,
+   scientific minimalism of seed.com, warmed for Africa.
+   ============================================================ */
+
+@font-face {
+  font-family: 'BDO Grotesk';
+  src: url('assets/fonts/BDOGrotesk-VF.woff2') format('woff2'),
+       url('assets/fonts/BDOGrotesk-VF.ttf') format('truetype');
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ===== BASE COLOR TOKENS ===== */
+
+  /* Surfaces — warm paper, the brand's default canvas */
+  --bone:        #F3EEE1;   /* primary background */
+  --paper:       #FBF8F0;   /* raised card / sheet surface */
+  --paper-deep:  #EDE6D4;   /* sunken / alt band */
+
+  /* Field greens — primary brand color (deep, agricultural) — brightened */
+  --field-900:   #163A22;
+  --field-800:   #1B4429;   /* PRIMARY */
+  --field-700:   #2A5A38;
+  --field-600:   #3B7249;
+
+  /* Leaf / growth greens — secondary, fresher — brightened */
+  --leaf-600:    #4C8A33;
+  --leaf-500:    #5FA83C;   /* SECONDARY */
+  --leaf-400:    #88C257;
+  --sprout-300:  #BEDC7C;   /* light highlight */
+  --sprout-100:  #E3F1C4;   /* tint / fill */
+
+  /* Earth accents — African warmth — brightened */
+  --clay-600:    #C04E28;
+  --clay-500:    #DC6A34;   /* terracotta accent */
+  --clay-200:    #F0C8B2;
+  --harvest-500: #EDA92C;   /* golden grain accent */
+  --harvest-300: #F6D279;
+  --harvest-100: #F8E7B9;
+
+  /* Soil neutrals — warm grays running brown→bone */
+  --soil-900:    #211A12;   /* near-black text */
+  --soil-700:    #463E32;
+  --soil-500:    #6B6151;
+  --soil-400:    #8C8472;
+  --soil-300:    #B4AB97;
+  --soil-200:    #D6CEBC;
+  --soil-100:    #E7E0D0;
+
+  --white:       #FFFFFF;
+  --black:       #15110B;
+
+  /* ===== SEMANTIC COLOR ROLES ===== */
+  --bg:           var(--bone);
+  --bg-alt:       var(--paper-deep);
+  --surface:      var(--paper);
+  --surface-2:    var(--white);
+
+  --fg1:          var(--soil-900);  /* headlines, primary text */
+  --fg2:          var(--soil-700);  /* body */
+  --fg3:          var(--soil-500);  /* muted / captions */
+  --fg-faint:     var(--soil-400);  /* placeholder, disabled */
+  --on-dark:      #F6F1E6;          /* text on field-green */
+  --on-dark-2:    #C8D6C0;          /* muted text on green */
+
+  --primary:      var(--field-800);
+  --primary-hov:  var(--field-700);
+  --primary-press:var(--field-900);
+  --secondary:    var(--leaf-500);
+  --accent:       var(--clay-500);
+  --gold:         var(--harvest-500);
+
+  --line:         #DCD3C0;          /* hairline borders */
+  --line-strong:  #C5BAA3;
+  --line-on-dark: rgba(243,238,225,.18);
+
+  --success:      var(--leaf-500);
+  --warning:      var(--harvest-500);
+  --danger:       #B23A2E;
+  --info:         var(--field-600);
+
+  /* Focus ring */
+  --ring:         rgba(95,168,60,.45);
+
+  /* ===== TYPE FAMILIES ===== */
+  --serif:  'BDO Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --sans:   'BDO Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --mono:   'BDO Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* ===== TYPE SCALE (fluid-ish, px) ===== */
+  --fs-display: 72px;   --lh-display: 0.98;  --ls-display: -0.02em;
+  --fs-h1:      52px;   --lh-h1:      1.02;  --ls-h1:      -0.018em;
+  --fs-h2:      38px;   --lh-h2:      1.06;  --ls-h2:      -0.014em;
+  --fs-h3:      28px;   --lh-h3:      1.12;  --ls-h3:      -0.01em;
+  --fs-h4:      21px;   --lh-h4:      1.2;   --ls-h4:      -0.005em;
+  --fs-lead:    20px;   --lh-lead:    1.5;
+  --fs-body:    17px;   --lh-body:    1.6;
+  --fs-sm:      15px;   --lh-sm:      1.5;
+  --fs-xs:      13px;   --lh-xs:      1.45;
+  --fs-label:   12px;   --lh-label:   1.3;   --ls-label:   0.14em;  /* mono eyebrow */
+
+  --w-light:    300;
+  --w-reg:      400;
+  --w-med:      500;
+  --w-semi:     600;
+  --w-bold:     700;
+
+  /* ===== SPACING (8px base, warm rhythm) ===== */
+  --s-1: 4px;   --s-2: 8px;   --s-3: 12px;  --s-4: 16px;
+  --s-5: 24px;  --s-6: 32px;  --s-7: 48px;  --s-8: 64px;
+  --s-9: 96px;  --s-10: 128px;
+
+  /* ===== RADII (gentle, organic — not pill-y) ===== */
+  --r-xs: 3px;  --r-sm: 6px;  --r-md: 10px; --r-lg: 16px;
+  --r-xl: 24px; --r-pill: 999px;
+
+  /* ===== SHADOWS (warm, soft, low) ===== */
+  --shadow-sm: 0 1px 2px rgba(33,26,18,.06), 0 1px 1px rgba(33,26,18,.04);
+  --shadow-md: 0 4px 16px rgba(33,26,18,.08), 0 1px 3px rgba(33,26,18,.05);
+  --shadow-lg: 0 18px 48px rgba(33,26,18,.12), 0 4px 12px rgba(33,26,18,.06);
+  --shadow-inset: inset 0 1px 2px rgba(33,26,18,.06);
+}
+
+/* ============================================================
+   SEMANTIC ELEMENT STYLES (opt in via .ds-prose or use vars)
+   ============================================================ */
+.ds-prose, .ds-type {
+  color: var(--fg2);
+  font-family: var(--sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+.display {
+  font-family: var(--serif);
+  font-weight: var(--w-light);
+  font-size: var(--fs-display);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  color: var(--fg1);
+}
+h1, .h1 {
+  font-family: var(--serif);
+  font-weight: var(--w-reg);
+  font-size: var(--fs-h1);
+  line-height: var(--lh-h1);
+  letter-spacing: var(--ls-h1);
+  color: var(--fg1);
+}
+h2, .h2 {
+  font-family: var(--serif);
+  font-weight: var(--w-reg);
+  font-size: var(--fs-h2);
+  line-height: var(--lh-h2);
+  letter-spacing: var(--ls-h2);
+  color: var(--fg1);
+}
+h3, .h3 {
+  font-family: var(--sans);
+  font-weight: var(--w-semi);
+  font-size: var(--fs-h3);
+  line-height: var(--lh-h3);
+  letter-spacing: var(--ls-h3);
+  color: var(--fg1);
+}
+h4, .h4 {
+  font-family: var(--sans);
+  font-weight: var(--w-semi);
+  font-size: var(--fs-h4);
+  line-height: var(--lh-h4);
+  color: var(--fg1);
+}
+.lead {
+  font-family: var(--sans);
+  font-weight: var(--w-med);
+  font-size: var(--fs-lead);
+  line-height: var(--lh-lead);
+  color: var(--fg2);
+}
+p, .body { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 450; }
+.small { font-size: var(--fs-sm); line-height: var(--lh-sm); }
+.caption { font-size: var(--fs-xs); line-height: var(--lh-xs); color: var(--fg3); }
+
+/* Mono eyebrow / kicker — a signature device of the brand */
+.eyebrow, .kicker {
+  font-family: var(--mono);
+  font-weight: var(--w-med);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.code, code { font-family: var(--mono); font-size: 0.92em; }
