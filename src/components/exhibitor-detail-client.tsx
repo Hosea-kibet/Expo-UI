@@ -16,18 +16,24 @@ import {
 } from "lucide-react";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import { ExpoFooter } from "@/src/components/expo-detail-footer";
-import type { Exhibitor } from "@/src/data/expo";
+import type { Exhibitor } from "@/src/lib/expo-types";
+import type { ExpoCmsSnapshot } from "@/src/lib/expo-cms";
+import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
 type ExhibitorDetailClientProps = {
   brochureHref: string;
   countdownLabel: string;
   exhibitor: Exhibitor;
+  expoPage: ExpoCmsSnapshot["expoPage"];
+  homepage: HomepageSnapshot;
 };
 
 export function ExhibitorDetailClient({
   brochureHref,
   countdownLabel,
   exhibitor,
+  expoPage,
+  homepage,
 }: ExhibitorDetailClientProps) {
   const router = useRouter();
 
@@ -78,7 +84,7 @@ export function ExhibitorDetailClient({
       <div className="topbar-shell">
         <div className="wrap topbar">
           <div className="topbar-left">
-            <span>Cultivating success in agriculture</span>
+            <span>{homepage.topbarTagline}</span>
           </div>
           <div className="topbar-right">
             <Link className="topbar-action" href="/contact">
@@ -145,9 +151,9 @@ export function ExhibitorDetailClient({
         <div className="wrap hero-inner">
           <h1 className="hero-title">2026 - Africa International<br />Agricultural Expo</h1>
           <div className="hero-strip">
-            <span>27–30 Oct 2026</span>
+            <span>{expoPage.dates.replace("October", "Oct")}</span>
             <span className="sep">·</span>
-            <span>KICC, Nairobi</span>
+            <span>{expoPage.venue.replace(", Kenya", "")}</span>
             <span className="sep">·</span>
             <span id="days-hero">{countdownLabel}</span>
           </div>
@@ -186,9 +192,9 @@ export function ExhibitorDetailClient({
             </nav>
             <div className="sidebar-footer">
               <div className="sidebar-meta">
-                <span className="sidebar-event-title">2026 - Africa International Agricultural Expo</span>
-                <strong>27–30 October 2026</strong>
-                KICC, Nairobi, Kenya
+                <span className="sidebar-event-title">{homepage.eventFullTitle}</span>
+                <strong>{expoPage.dates}</strong>
+                {expoPage.venue}
               </div>
               <Link className="btn btn-accent block" href="/visitor-registration">
                 Register Now →
@@ -255,7 +261,7 @@ export function ExhibitorDetailClient({
         </div>
       </div>
 
-      <ExpoFooter />
+      <ExpoFooter homepage={homepage} />
     </>
   );
 }

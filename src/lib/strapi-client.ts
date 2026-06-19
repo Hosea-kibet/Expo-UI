@@ -22,6 +22,10 @@ function buildQuery(params?: QueryParams) {
 }
 
 function getStrapiApiBaseUrl() {
+  if (typeof window === "undefined" && process.env.STRAPI_URL) {
+    return `${process.env.STRAPI_URL.replace(/\/$/, "")}/api`;
+  }
+
   return process.env.NEXT_PUBLIC_STRAPI_API_URL ?? "/api/strapi";
 }
 

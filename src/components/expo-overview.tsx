@@ -1,69 +1,33 @@
 import Link from "next/link";
 import { ArrowRight, CalendarDays, MapPin, Ticket } from "lucide-react";
 
-const guestCards = [
-  {
-    image: "/assets/honored-guests/tito-mutai.jpg",
-    alt: "Tito Mutai speaking at the 2026 - Africa International Agricultural Expo",
-    name: "Tito Mutai",
-    title: "Chief Executive Officer",
-    org: "Agri Africa Exhibition Ltd.",
-  },
-  {
-    image: "/assets/honored-guests/mutahi-kagwe.jpeg",
-    alt: "Honorable Senator Mutahi Kagwe",
-    name: "Hon. Sen. Mutahi Kagwe",
-    title: "Cabinet Secretary",
-    org: "Ministry of Agriculture & Livestock Development",
-  },
-  {
-    image: "/assets/honored-guests/johnson-sakaja.jpeg",
-    alt: "Governor Johnson Sakaja",
-    name: "H.E. Johnson Sakaja",
-    title: "Governor",
-    org: "Nairobi City County",
-  },
-];
-
-const objectives = [
-  {
-    title: "Showcase global innovation",
-    copy: "Showcasing global agricultural innovations and technologies to the African continent.",
-  },
-  {
-    title: "Highlight African capability",
-    copy: "Highlighting Africa's capabilities and strengths in agriculture.",
-  },
-  {
-    title: "Strengthen trade relationships",
-    copy: "Strengthening mutually beneficial trade relationships between Africa and international partners.",
-  },
-  {
-    title: "Promote investment",
-    copy: "Identifying and promoting investment opportunities in Africa's agricultural sector.",
-  },
-];
-
-const categories = [
-  "Honey",
-  "Mushroom",
-  "Seed Propagation",
-  "Poultry",
-  "Dairy",
-  "Livestock & Meat",
-  "Animal Health",
-  "Plant Health",
-  "Herbs & Spices",
-];
-
 export function ExpoOverview({
-  dates = "27–30 October 2026",
-  venue = "KICC, Nairobi, Kenya",
-  theme = "Improving agricultural productivity in Africa through innovations and market access.",
+  dates,
+  venue,
+  theme,
+  overviewIntro,
+  overviewBody,
+  overviewGuests,
+  overviewObjectives,
+  overviewCategories,
 }: {
-  dates?: string;
-  venue?: string;
-  theme?: string;
+  dates: string;
+  venue: string;
+  theme: string;
+  overviewIntro: string;
+  overviewBody: string;
+  overviewGuests: Array<{
+    imageUrl: string;
+    alt: string;
+    name: string;
+    title: string;
+    org: string;
+  }>;
+  overviewObjectives: Array<{
+    title: string;
+    copy: string;
+  }>;
+  overviewCategories: string[];
 }) {
   return (
     <>
@@ -97,7 +61,7 @@ export function ExpoOverview({
         </div>
         <article className="overview-about-card">
           <span className="overview-tag">Event Details</span>
-          <h2 id="overview-about-title">2026 - Africa International Agricultural Expo</h2>
+          <h2 id="overview-about-title">{overviewIntro}</h2>
           <dl className="overview-event-details">
             <div>
               <dt>Date</dt>
@@ -115,10 +79,10 @@ export function ExpoOverview({
           <div className="overview-objectives">
             <div className="overview-objectives-head">
               <h3>Event Objectives</h3>
-              <span>What 2026 - AIAE is built to achieve</span>
+              <span>{overviewBody}</span>
             </div>
             <ul>
-              {objectives.map((objective) => (
+              {overviewObjectives.map((objective) => (
                 <li key={objective.title}>
                   <strong>{objective.title}</strong>
                   <span>{objective.copy}</span>
@@ -134,10 +98,10 @@ export function ExpoOverview({
           <div className="expo-category-track">
             {[0, 1].map((copyIndex) => (
               <div className="expo-category-set" aria-hidden={copyIndex === 1} key={copyIndex}>
-                {categories.map((category) => (
+                {overviewCategories.map((category) => (
                   <span key={`${copyIndex}-${category}`}>
                     {category}
-                    {category !== categories[categories.length - 1] ? <i /> : null}
+                    {category !== overviewCategories[overviewCategories.length - 1] ? <i /> : null}
                   </span>
                 ))}
               </div>
@@ -158,9 +122,9 @@ export function ExpoOverview({
           </p>
         </div>
         <div className="guest-grid">
-          {guestCards.map((guest) => (
+          {overviewGuests.map((guest) => (
             <article className="guest-card" key={guest.name}>
-              <img src={guest.image} alt={guest.alt} />
+              <img src={guest.imageUrl} alt={guest.alt} />
               <div className="guest-copy">
                 <h3>{guest.name}</h3>
                 <span>{guest.title}</span>

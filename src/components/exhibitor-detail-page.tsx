@@ -1,13 +1,14 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ExhibitorDetailClient } from "@/src/components/exhibitor-detail-client";
-import { exhibitors } from "@/src/data/expo";
-import { getExpoExhibitorBySlug } from "@/src/lib/expo-cms";
+import { getExpoCmsSnapshot, getExpoExhibitorBySlug } from "@/src/lib/expo-cms";
+import { getHomepageSnapshot } from "@/src/lib/homepage-cms";
 
 type Params = { slug: string };
 
-export function generateExhibitorStaticParams() {
-  return exhibitors.map((item) => ({ slug: item.slug }));
+export async function generateExhibitorStaticParams() {
+  const snapshot = await getExpoCmsSnapshot();
+  return snapshot.exhibitors.map((item) => ({ slug: item.slug }));
 }
 
 export async function generateExhibitorMetadata({
@@ -27,7 +28,11 @@ export async function ExhibitorDetailPageContent({
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  const exhibitor = await getExpoExhibitorBySlug(slug);
+  const [exhibitor, expoSnapshot, homepage] = await Promise.all([
+    getExpoExhibitorBySlug(slug),
+    getExpoCmsSnapshot(),
+    getHomepageSnapshot(),
+  ]);
   if (!exhibitor) notFound();
 
   const daysToGo = Math.ceil((new Date("2026-10-27T00:00:00").getTime() - Date.now()) / 86400000);
@@ -41,6 +46,8 @@ export async function ExhibitorDetailPageContent({
       brochureHref={brochureHref}
       countdownLabel={countdownLabel}
       exhibitor={exhibitor}
+      expoPage={expoSnapshot.expoPage}
+      homepage={homepage}
     />
   );
 }

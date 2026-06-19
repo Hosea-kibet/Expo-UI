@@ -51,6 +51,9 @@ export type ExpoPageContent = {
   venue?: string;
   overviewIntro?: string;
   overviewBody?: string;
+  overviewGuests?: unknown;
+  overviewObjectives?: unknown;
+  overviewCategories?: unknown;
   floorPlan?: unknown;
   floorPlanUrl?: string;
 };
@@ -81,7 +84,6 @@ export type SupportUnitContent = {
   country?: string;
   description?: string;
   logo?: unknown;
-  logoUrl?: string;
   logoAlt?: string;
 };
 

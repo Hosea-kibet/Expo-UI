@@ -15,6 +15,8 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import { PagePreloader } from "@/src/components/page-preloader";
+import type { ExpoCmsSnapshot } from "@/src/lib/expo-cms";
+import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
 type RegistrationStep = "form" | "verification" | "complete";
 
@@ -22,7 +24,13 @@ function buildReference() {
   return `AIAE26-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
-export function VisitorRegistrationClient() {
+export function VisitorRegistrationClient({
+  expoPage,
+  registration,
+}: {
+  expoPage: Pick<ExpoCmsSnapshot["expoPage"], "dates" | "venue">;
+  registration: Pick<HomepageSnapshot, "eventName">;
+}) {
   const [step, setStep] = useState<RegistrationStep>("form");
   const [email, setEmail] = useState("");
   const [reference, setReference] = useState("");
@@ -65,7 +73,7 @@ export function VisitorRegistrationClient() {
             <ArrowLeft /> Back to the Expo
           </Link>
           <div className="register-event-copy">
-            <div className="eyebrow">Visitor Registration · 2026 - AIAE</div>
+            <div className="eyebrow">Visitor Registration · {registration.eventName}</div>
             <h1>Meet people moving African agriculture forward.</h1>
             <p>
               Register to explore innovations, meet suppliers, join expert sessions, and build
@@ -77,14 +85,14 @@ export function VisitorRegistrationClient() {
               <CalendarDays />
               <span>
                 <small>Dates</small>
-                <strong>27–30 October 2026</strong>
+                <strong>{expoPage.dates}</strong>
               </span>
             </div>
             <div>
               <MapPin />
               <span>
                 <small>Venue</small>
-                <strong>KICC, Nairobi, Kenya</strong>
+                <strong>{expoPage.venue}</strong>
               </span>
             </div>
           </div>

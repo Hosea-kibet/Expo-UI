@@ -4,8 +4,15 @@ import Link from "next/link";
 import { ArrowLeft, Mail, Check } from "lucide-react";
 import { useState } from "react";
 import { PageBodyClass } from "@/src/components/page-body-class";
+import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
-export function MembersPortalClient({ company }: { company?: string }) {
+export function MembersPortalClient({
+  company,
+  contactEmail,
+}: {
+  company?: string;
+  contactEmail: HomepageSnapshot["email"];
+}) {
   const [email, setEmail] = useState("");
   const [submittedEmail, setSubmittedEmail] = useState("");
 
@@ -87,7 +94,7 @@ export function MembersPortalClient({ company }: { company?: string }) {
           </form>
           <div className="portal-request">
             Not a member?{" "}
-            <a href="mailto:expo@agriexpo.africa?subject=Agri%20Africa%20membership%20request">
+            <a href={`mailto:${contactEmail}?subject=Agri%20Africa%20membership%20request`}>
               Request access
             </a>
           </div>

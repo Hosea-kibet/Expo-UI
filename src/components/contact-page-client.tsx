@@ -5,8 +5,13 @@ import { ArrowLeft, ArrowRight, BadgeCheck, Mail, MapPin, Phone } from "lucide-r
 import { useState } from "react";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import { PagePreloader } from "@/src/components/page-preloader";
+import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
-export function ContactPageClient() {
+export function ContactPageClient({
+  contact,
+}: {
+  contact: Pick<HomepageSnapshot, "email" | "phone" | "address">;
+}) {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   return (
@@ -33,25 +38,25 @@ export function ContactPageClient() {
           </p>
 
           <div className="contact-details-list">
-            <a href="mailto:expo@agriexpo.africa">
+            <a href={`mailto:${contact.email}`}>
               <Mail />
               <span>
                 <small>Email</small>
-                <strong>expo@agriexpo.africa</strong>
+                <strong>{contact.email}</strong>
               </span>
             </a>
-            <a href="tel:+254790888333">
+            <a href={`tel:${contact.phone.replace(/\s+/g, "")}`}>
               <Phone />
               <span>
                 <small>Phone</small>
-                <strong>+254 790 888333</strong>
+                <strong>{contact.phone}</strong>
               </span>
             </a>
             <div>
               <MapPin />
               <span>
                 <small>Office</small>
-                <strong>Arbor House, Arboretum Drive, Nairobi, Kenya</strong>
+                <strong>{contact.address}</strong>
               </span>
             </div>
           </div>

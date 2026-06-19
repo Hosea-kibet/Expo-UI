@@ -1,23 +1,30 @@
 import {
-  exhibitors as fallbackExhibitors,
-  getExhibitorBySlug as getFallbackExhibitorBySlug,
-  programmeDays as fallbackProgrammeDays,
-  supportUnits as fallbackSupportUnits,
-  type Exhibitor,
-  type SupportUnit,
-} from "@/src/data/expo";
-import {
   getExhibitorsContent,
   getExpoPageContent,
   getProgrammeDaysContent,
   getSupportUnitsContent,
 } from "@/src/lib/strapi-content";
 import { normalizeStrapiAssetUrl } from "@/src/lib/strapi-media";
+import type { Exhibitor, SupportUnit } from "@/src/lib/expo-types";
 
 type ExpoPageSnapshot = {
   dates: string;
   venue: string;
   theme: string;
+  overviewIntro: string;
+  overviewBody: string;
+  overviewGuests: Array<{
+    imageUrl: string;
+    alt: string;
+    name: string;
+    title: string;
+    org: string;
+  }>;
+  overviewObjectives: Array<{
+    title: string;
+    copy: string;
+  }>;
+  overviewCategories: string[];
   floorPlanUrl: string;
 };
 
@@ -34,14 +41,6 @@ export type ExpoCmsSnapshot = {
   exhibitors: Exhibitor[];
   supportUnits: SupportUnit[];
   programmeDays: ProgrammeDay[];
-};
-
-const fallbackExpoPage: ExpoPageSnapshot = {
-  dates: "27–30 October 2026",
-  venue: "KICC, Nairobi, Kenya",
-  theme:
-    "Improving agricultural productivity in Africa through innovations and market access.",
-  floorPlanUrl: "/assets/aiae-2026-exhibition-layout.png",
 };
 
 function normalizeAssetUrl(value?: string | null) {
@@ -139,9 +138,7 @@ function normalizeExhibitor(record: Record<string, unknown>): Exhibitor | null {
 function normalizeSupportUnit(record: Record<string, unknown>): SupportUnit | null {
   if (typeof record.slug !== "string" || typeof record.title !== "string") return null;
 
-  const logoUrl =
-    normalizeAssetUrl(typeof record.logoUrl === "string" ? record.logoUrl : undefined) ??
-    fallbackSupportUnits.find((item) => item.slug === record.slug)?.logoSrc;
+  const logoSrc = extractMediaUrl(record.logo);
 
   return {
     slug: record.slug,
@@ -154,7 +151,7 @@ function normalizeSupportUnit(record: Record<string, unknown>): SupportUnit | nu
         : "Government",
     country: typeof record.country === "string" ? record.country : "",
     description: typeof record.description === "string" ? record.description : "",
-    logoSrc: logoUrl ?? "",
+    logoSrc: logoSrc ?? "",
     alt: typeof record.logoAlt === "string" ? record.logoAlt : record.title,
   };
 }
@@ -193,106 +190,169 @@ function normalizeProgrammeDay(record: Record<string, unknown>): ProgrammeDay | 
   };
 }
 
+function normalizeOverviewGuests(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      if (
+        typeof record.imageUrl !== "string" ||
+        typeof record.alt !== "string" ||
+        typeof record.name !== "string" ||
+        typeof record.title !== "string" ||
+        typeof record.org !== "string"
+      ) {
+        return null;
+      }
+
+      return {
+        imageUrl: record.imageUrl,
+        alt: record.alt,
+        name: record.name,
+        title: record.title,
+        org: record.org,
+      };
+    })
+    .filter(
+      (
+        item,
+      ): item is {
+        imageUrl: string;
+        alt: string;
+        name: string;
+        title: string;
+        org: string;
+      } => item !== null,
+    );
+}
+
+function normalizeOverviewObjectives(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      if (typeof record.title !== "string" || typeof record.copy !== "string") return null;
+
+      return {
+        title: record.title,
+        copy: record.copy,
+      };
+    })
+    .filter((item): item is { title: string; copy: string } => item !== null);
+}
+
+function normalizeOverviewCategories(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      return typeof record.label === "string" ? record.label : null;
+    })
+    .filter((item): item is string => typeof item === "string" && item.length > 0);
+}
+
 export async function getExpoCmsSnapshot(): Promise<ExpoCmsSnapshot> {
-  try {
-    const [expoPageResponse, exhibitorsResponse, supportUnitsResponse, programmeDaysResponse] =
-      await Promise.all([
-        getExpoPageContent(),
-        getExhibitorsContent(),
-        getSupportUnitsContent(),
-        getProgrammeDaysContent(),
-      ]);
+  const [expoPageResponse, exhibitorsResponse, supportUnitsResponse, programmeDaysResponse] =
+    await Promise.all([
+      getExpoPageContent(),
+      getExhibitorsContent(),
+      getSupportUnitsContent(),
+      getProgrammeDaysContent(),
+    ]);
 
-    const expoPageRecord =
-      expoPageResponse.data && typeof expoPageResponse.data === "object"
-        ? (expoPageResponse.data as Record<string, unknown>)
-        : null;
+  const expoPageRecord =
+    expoPageResponse.data && typeof expoPageResponse.data === "object"
+      ? (expoPageResponse.data as Record<string, unknown>)
+      : null;
 
-    const exhibitors = Array.isArray(exhibitorsResponse.data)
-      ? exhibitorsResponse.data
-          .map((item) => normalizeExhibitor(item as Record<string, unknown>))
-          .filter((item): item is Exhibitor => item !== null)
-      : [];
+  const exhibitors = Array.isArray(exhibitorsResponse.data)
+    ? exhibitorsResponse.data
+        .map((item) => normalizeExhibitor(item as Record<string, unknown>))
+        .filter((item): item is Exhibitor => item !== null)
+    : [];
 
-    const supportUnits = Array.isArray(supportUnitsResponse.data)
-      ? supportUnitsResponse.data
-          .map((item) => normalizeSupportUnit(item as Record<string, unknown>))
-          .filter((item): item is SupportUnit => item !== null)
-      : [];
+  const supportUnits = Array.isArray(supportUnitsResponse.data)
+    ? supportUnitsResponse.data
+        .map((item) => normalizeSupportUnit(item as Record<string, unknown>))
+        .filter((item): item is SupportUnit => item !== null)
+    : [];
 
-    const programmeDays = Array.isArray(programmeDaysResponse.data)
-      ? programmeDaysResponse.data
-          .map((item) => normalizeProgrammeDay(item as Record<string, unknown>))
-          .filter((item): item is ProgrammeDay => item !== null)
-      : [];
+  const programmeDays = Array.isArray(programmeDaysResponse.data)
+    ? programmeDaysResponse.data
+        .map((item) => normalizeProgrammeDay(item as Record<string, unknown>))
+        .filter((item): item is ProgrammeDay => item !== null)
+    : [];
 
-    return {
-      expoPage: {
-        dates:
-          expoPageRecord && typeof expoPageRecord.dates === "string"
-            ? expoPageRecord.dates
-            : fallbackExpoPage.dates,
-        venue:
-          expoPageRecord && typeof expoPageRecord.venue === "string"
-            ? expoPageRecord.venue
-            : fallbackExpoPage.venue,
-        theme:
-          expoPageRecord && typeof expoPageRecord.theme === "string"
-            ? expoPageRecord.theme
-            : fallbackExpoPage.theme,
-        floorPlanUrl:
-          extractMediaUrl(expoPageRecord?.floorPlan) ??
-          normalizeAssetUrl(
-            expoPageRecord && typeof expoPageRecord.floorPlanUrl === "string"
-              ? expoPageRecord.floorPlanUrl
-              : undefined,
-          ) ??
-          fallbackExpoPage.floorPlanUrl,
-      },
-      exhibitors: exhibitors.length > 0 ? exhibitors : fallbackExhibitors,
-      supportUnits: supportUnits.length > 0 ? supportUnits : fallbackSupportUnits,
-      programmeDays:
-        programmeDays.length > 0
-          ? programmeDays
-          : fallbackProgrammeDays.map((item) => ({
-              id: item.id,
-              label: item.label,
-              heading: item.heading,
-              hours: item.hours,
-              sessions: item.sessions.map((session) => [
-                session[0],
-                session[1],
-                session[2],
-                session[3],
-              ] as [string, string, string, string]),
-            })),
-    };
-  } catch {
-    return {
-      expoPage: fallbackExpoPage,
-      exhibitors: fallbackExhibitors,
-      supportUnits: fallbackSupportUnits,
-      programmeDays: fallbackProgrammeDays.map((item) => ({
-        id: item.id,
-        label: item.label,
-        heading: item.heading,
-        hours: item.hours,
-        sessions: item.sessions.map((session) => [
-          session[0],
-          session[1],
-          session[2],
-          session[3],
-        ] as [string, string, string, string]),
-      })),
-    };
+  const snapshot: ExpoCmsSnapshot = {
+    expoPage: {
+      dates:
+        expoPageRecord && typeof expoPageRecord.dates === "string"
+          ? expoPageRecord.dates
+          : "",
+      venue:
+        expoPageRecord && typeof expoPageRecord.venue === "string"
+          ? expoPageRecord.venue
+          : "",
+      theme:
+        expoPageRecord && typeof expoPageRecord.theme === "string"
+          ? expoPageRecord.theme
+          : "",
+      overviewIntro:
+        expoPageRecord && typeof expoPageRecord.overviewIntro === "string"
+          ? expoPageRecord.overviewIntro
+          : "",
+      overviewBody:
+        expoPageRecord && typeof expoPageRecord.overviewBody === "string"
+          ? expoPageRecord.overviewBody
+          : "",
+      overviewGuests: normalizeOverviewGuests(expoPageRecord?.overviewGuests),
+      overviewObjectives: normalizeOverviewObjectives(expoPageRecord?.overviewObjectives),
+      overviewCategories: normalizeOverviewCategories(expoPageRecord?.overviewCategories),
+      floorPlanUrl:
+        extractMediaUrl(expoPageRecord?.floorPlan) ??
+        normalizeAssetUrl(
+          expoPageRecord && typeof expoPageRecord.floorPlanUrl === "string"
+            ? expoPageRecord.floorPlanUrl
+            : undefined,
+        ) ??
+        "",
+    },
+    exhibitors,
+    supportUnits,
+    programmeDays,
+  };
+
+  const missingFields: string[] = [];
+
+  if (!snapshot.expoPage.dates) missingFields.push("expo-page.dates");
+  if (!snapshot.expoPage.venue) missingFields.push("expo-page.venue");
+  if (!snapshot.expoPage.theme) missingFields.push("expo-page.theme");
+  if (!snapshot.expoPage.overviewIntro) missingFields.push("expo-page.overviewIntro");
+  if (!snapshot.expoPage.overviewBody) missingFields.push("expo-page.overviewBody");
+  if (snapshot.expoPage.overviewGuests.length === 0) missingFields.push("expo-page.overviewGuests");
+  if (snapshot.expoPage.overviewObjectives.length === 0) missingFields.push("expo-page.overviewObjectives");
+  if (snapshot.expoPage.overviewCategories.length === 0) missingFields.push("expo-page.overviewCategories");
+  if (!snapshot.expoPage.floorPlanUrl) missingFields.push("expo-page.floorPlan");
+  if (snapshot.exhibitors.length === 0) missingFields.push("exhibitors");
+  if (snapshot.supportUnits.length === 0) missingFields.push("support-units");
+  if (snapshot.supportUnits.some((item) => !item.logoSrc)) missingFields.push("support-units.logo");
+  if (snapshot.programmeDays.length === 0) missingFields.push("programme-days");
+
+  if (missingFields.length > 0) {
+    throw new Error(`Expo content is incomplete in Strapi. Missing fields: ${missingFields.join(", ")}`);
   }
+
+  return snapshot;
 }
 
 export async function getExpoExhibitorBySlug(slug: string) {
   const snapshot = await getExpoCmsSnapshot();
-  return (
-    snapshot.exhibitors.find((item) => item.slug === slug) ??
-    getFallbackExhibitorBySlug(slug) ??
-    null
-  );
+  return snapshot.exhibitors.find((item) => item.slug === slug) ?? null;
 }

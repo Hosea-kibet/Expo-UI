@@ -28,8 +28,9 @@ import {
 import { BrandPreloader } from "@/src/components/brand-preloader";
 import { ExpoOverview } from "@/src/components/expo-overview";
 import { PageBodyClass } from "@/src/components/page-body-class";
-import { exhibitors, programmeDays, supportUnits, type Exhibitor, vacantBooths } from "@/src/data/expo";
 import type { ExpoCmsSnapshot } from "@/src/lib/expo-cms";
+import type { Exhibitor, SupportUnit } from "@/src/lib/expo-types";
+import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
 type ExpoTab = "overview" | "exhibitors" | "support" | "floorplan" | "programme";
 type ExpoViewTab = ExpoTab | "exhibitor-detail";
@@ -127,8 +128,10 @@ function ExhibitorDetailPanel({
 }
 
 function ExpoFooter({
+  homepage,
   onPartnerClick,
 }: {
+  homepage: HomepageSnapshot;
   onPartnerClick: (partner: {
     badge: string;
     title: string;
@@ -143,20 +146,20 @@ function ExpoFooter({
         <div className="wrap grid event-register-cta">
           <div className="reveal-up in">
             <div className="eyebrow" style={{ color: "var(--harvest-100)" }}>
-              Registration is open
+              {homepage.registrationEyebrow}
             </div>
-            <h3>2026 - Africa International Agricultural Expo</h3>
+            <h3>{homepage.registrationTitle}</h3>
             <div className="event-register-details">
               <span>
-                <CalendarDays /> 27–30 October 2026
+                <CalendarDays /> {homepage.registrationDates}
               </span>
               <span>
-                <MapPin /> KICC, Nairobi, Kenya
+                <MapPin /> {homepage.registrationVenue}
               </span>
             </div>
           </div>
           <div className="event-register-action reveal-up in" style={{ transitionDelay: ".14s" }}>
-            <p>Meet exhibitors, explore agricultural innovation, and build valuable connections across Africa&apos;s value chains.</p>
+            <p>{homepage.registrationBody}</p>
             <Link className="btn btn-light lg" href="/visitor-registration">
               Register Now <ArrowRight />
             </Link>
@@ -169,20 +172,24 @@ function ExpoFooter({
           <div className="foot-grid">
             <div className="foot-brand reveal-up in">
               <img src="/assets/logo-wordmark-dark.svg" alt="Agri Africa" />
-              <p>An events company cultivating success in agriculture — making farming a desirable and dignified vocation.</p>
+              <p>{homepage.footerBrandCopy}</p>
               <div className="socials">
-                <a href="#" aria-label="Facebook">
-                  <Facebook style={{ width: 16, height: 16 }} />
-                </a>
-                <a href="#" aria-label="Instagram">
-                  <Instagram style={{ width: 16, height: 16 }} />
-                </a>
-                <a href="#" aria-label="YouTube">
-                  <Youtube style={{ width: 16, height: 16 }} />
-                </a>
-                <a href="#" aria-label="LinkedIn">
-                  <Linkedin style={{ width: 16, height: 16 }} />
-                </a>
+                {homepage.socialLinks.map((social) => {
+                  const Icon =
+                    social.platform === "facebook"
+                      ? Facebook
+                      : social.platform === "instagram"
+                        ? Instagram
+                        : social.platform === "youtube"
+                          ? Youtube
+                          : Linkedin;
+
+                  return (
+                    <a key={social.platform} href={social.url} aria-label={social.platform}>
+                      <Icon style={{ width: 16, height: 16 }} />
+                    </a>
+                  );
+                })}
               </div>
             </div>
             <div className="foot-col reveal-up in" style={{ transitionDelay: ".1s" }}>
@@ -193,56 +200,34 @@ function ExpoFooter({
             </div>
             <div className="foot-col reveal-up in" style={{ transitionDelay: ".2s" }}>
               <div className="h">Partners</div>
-              <a
-                href="#"
-                onClick={(event) => {
-                  event.preventDefault();
-                  onPartnerClick({
-                    badge: "KE",
-                    title: "Ministry of Agriculture & Livestock",
-                    about:
-                      "Kenya's principal government ministry responsible for agricultural development, food security, and crop and livestock production policy.",
-                    involvement:
-                      "Official Government Partner for the AIAE Expo — providing regulatory endorsement, institutional backing, and policy-level support.",
-                    url: "https://kilimo.go.ke",
-                  });
-                }}
-              >
-                Ministry of Agriculture
-              </a>
-              <a
-                href="#"
-                onClick={(event) => {
-                  event.preventDefault();
-                  onPartnerClick({
-                    badge: "HX",
-                    title: "HXIE",
-                    about:
-                      "A leading international agricultural exhibition organiser with a track record of connecting East African and global agri-business stakeholders.",
-                    involvement:
-                      "Strategic Exhibition Partner — contributing expertise in international trade fair organisation and bringing global exhibitor networks to the AIAE Expo.",
-                    url: "https://hxie.com",
-                  });
-                }}
-              >
-                HXIE
-              </a>
+              {homepage.partners.map((partner) => (
+                <a
+                  key={partner.name}
+                  href="#"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onPartnerClick(partner);
+                  }}
+                >
+                  {partner.name}
+                </a>
+              ))}
             </div>
           </div>
           <div className="contact reveal-up in" style={{ transitionDelay: ".12s" }}>
             <div className="item">
-              <Phone style={{ width: 16, height: 16 }} /> +254 790 888333
+              <Phone style={{ width: 16, height: 16 }} /> {homepage.phone}
             </div>
             <div className="item">
-              <Mail style={{ width: 16, height: 16 }} /> expo@agriexpo.africa
+              <Mail style={{ width: 16, height: 16 }} /> {homepage.email}
             </div>
             <div className="item">
-              <MapPin style={{ width: 16, height: 16 }} /> Arbor House, Aboretum Drive, Nairobi, Kenya
+              <MapPin style={{ width: 16, height: 16 }} /> {homepage.address}
             </div>
           </div>
           <div className="legal reveal-up in" style={{ transitionDelay: ".22s" }}>
-            <span>© 2026 Agri Africa Limited. All rights reserved.</span>
-            <span>Nairobi, Kenya · www.agriexpo.africa</span>
+            <span>{homepage.legalLeft}</span>
+            <span>{homepage.legalRight}</span>
           </div>
         </div>
       </footer>
@@ -352,22 +337,6 @@ function ExhibitorsPanel({
               <span className="ex-link">View Details →</span>
             </a>
           ))}
-          {query === "" && category === "all" && country === "all"
-            ? vacantBooths.map((booth) => (
-                <div className="ex-card vacant" key={booth.description}>
-                  <span className="booth-badge">{booth.badge}</span>
-                  <div className="ex-name" style={{ color: "var(--fg3)" }}>
-                    {booth.title}
-                  </div>
-                  <div className="ex-desc" style={{ color: "var(--fg3)" }}>
-                    {booth.description}
-                  </div>
-                  <a className="ex-link" href="#">
-                    Enquire →
-                  </a>
-                </div>
-              ))
-            : null}
         </div>
 
         {filtered.length === 0 ? <p className="exhibitor-empty">No exhibitors match your search.</p> : null}
@@ -392,8 +361,8 @@ function SupportUnitsPanel({
   units,
 }: {
   active: boolean;
-  onOpenUnit: (unit: (typeof supportUnits)[number]) => void;
-  units: (typeof supportUnits)[number][];
+  onOpenUnit: (unit: SupportUnit) => void;
+  units: SupportUnit[];
 }) {
   const groups = ["Government", "Industry", "Media"] as const;
 
@@ -542,32 +511,15 @@ function ProgrammePanel({
 
 export default function ExpoClient({
   initialData,
+  homepageData,
 }: {
-  initialData?: ExpoCmsSnapshot;
+  initialData: ExpoCmsSnapshot;
+  homepageData: HomepageSnapshot;
 }) {
-  const exhibitorsData = initialData?.exhibitors ?? exhibitors;
-  const supportUnitsData = initialData?.supportUnits ?? supportUnits;
-  const programmeDaysData =
-    initialData?.programmeDays ??
-    programmeDays.map((item) => ({
-      id: item.id,
-      label: item.label,
-      heading: item.heading,
-      hours: item.hours,
-      sessions: item.sessions.map((session) => [
-        session[0],
-        session[1],
-        session[2],
-        session[3],
-      ] as [string, string, string, string]),
-    }));
-  const expoPage = initialData?.expoPage ?? {
-    dates: "27–30 October 2026",
-    venue: "KICC, Nairobi, Kenya",
-    theme:
-      "Improving agricultural productivity in Africa through innovations and market access.",
-    floorPlanUrl: "/assets/aiae-2026-exhibition-layout.png",
-  };
+  const exhibitorsData = initialData.exhibitors;
+  const supportUnitsData = initialData.supportUnits;
+  const programmeDaysData = initialData.programmeDays;
+  const expoPage = initialData.expoPage;
   const [activeTab, setActiveTab] = useState<ExpoViewTab>("overview");
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
   const [partnerModal, setPartnerModal] = useState<null | {
@@ -577,7 +529,7 @@ export default function ExpoClient({
     involvement: string;
     url: string;
   }>(null);
-  const [supportUnitModal, setSupportUnitModal] = useState<(typeof supportUnits)[number] | null>(null);
+  const [supportUnitModal, setSupportUnitModal] = useState<SupportUnit | null>(null);
 
   useEffect(() => {
     const previous = document.body.className;
@@ -774,7 +726,7 @@ export default function ExpoClient({
       <div className="topbar-shell">
         <div className="wrap topbar">
           <div className="topbar-left">
-            <span>Cultivating success in agriculture</span>
+            <span>{homepageData.topbarTagline}</span>
           </div>
           <div className="topbar-right">
             <Link className="topbar-action" href="/contact">
@@ -910,8 +862,8 @@ export default function ExpoClient({
               </button>
             </nav>
             <div className="sidebar-footer">
-              <div className="sidebar-meta">
-                <span className="sidebar-event-title">2026 - Africa International Agricultural Expo</span>
+            <div className="sidebar-meta">
+                <span className="sidebar-event-title">{homepageData.eventFullTitle}</span>
                 <strong>{expoPage.dates}</strong>
                 {expoPage.venue}
               </div>
@@ -924,7 +876,16 @@ export default function ExpoClient({
           <div className="expo-panels" id="expo-panels">
             <div className={`panel${activeTab === "overview" ? " active" : ""}`} id="panel-overview" style={{ display: activeTab === "overview" ? "block" : "none" }}>
               <div id="overview" className="panel-anchor" aria-hidden="true" />
-              <ExpoOverview dates={expoPage.dates} venue={expoPage.venue} theme={expoPage.theme} />
+              <ExpoOverview
+                dates={expoPage.dates}
+                venue={expoPage.venue}
+                theme={expoPage.theme}
+                overviewIntro={expoPage.overviewIntro}
+                overviewBody={expoPage.overviewBody}
+                overviewGuests={expoPage.overviewGuests}
+                overviewObjectives={expoPage.overviewObjectives}
+                overviewCategories={expoPage.overviewCategories}
+              />
             </div>
             <ExhibitorsPanel active={activeTab === "exhibitors"} onOpenExhibitor={openExhibitor} exhibitorsData={exhibitorsData} />
             <ExhibitorDetailPanel active={activeTab === "exhibitor-detail"} exhibitor={selectedExhibitor} onBack={() => void changeTab("exhibitors")} />
@@ -935,7 +896,7 @@ export default function ExpoClient({
         </div>
       </div>
 
-      <ExpoFooter onPartnerClick={setPartnerModal} />
+      <ExpoFooter homepage={homepageData} onPartnerClick={setPartnerModal} />
 
       <div className={`pmodal-overlay${partnerModal ? " open" : ""}`} role="dialog" aria-modal="true" aria-labelledby="pmodal-title">
         <div className="pmodal">
