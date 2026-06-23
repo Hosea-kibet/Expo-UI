@@ -4628,6 +4628,14 @@ footer.site .ptn-link {
   margin: 0 auto;
 }
 
+.register-submit-error {
+  max-width: 360px;
+  margin: 14px auto 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #b54f2f;
+}
+
 .verification-resend {
   margin-top: 18px;
   border: 0;

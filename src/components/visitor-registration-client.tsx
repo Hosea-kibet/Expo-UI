@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { getSession, signIn } from "next-auth/react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -15,14 +16,15 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import { PagePreloader } from "@/src/components/page-preloader";
+import {
+  sanitizeRegistrationInput,
+  type PendingRegistration,
+} from "@/src/lib/registration";
 import type { ExpoCmsSnapshot } from "@/src/lib/expo-cms";
 import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
 type RegistrationStep = "form" | "verification" | "complete";
-
-function buildReference() {
-  return `AIAE26-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-}
+type SubmitState = "idle" | "submitting" | "error";
 
 export function VisitorRegistrationClient({
   expoPage,
@@ -34,7 +36,11 @@ export function VisitorRegistrationClient({
   const [step, setStep] = useState<RegistrationStep>("form");
   const [email, setEmail] = useState("");
   const [reference, setReference] = useState("");
+  const [pendingRegistration, setPendingRegistration] = useState<PendingRegistration | null>(null);
   const [resendState, setResendState] = useState(false);
+  const [submitState, setSubmitState] = useState<SubmitState>("idle");
+  const [submitError, setSubmitError] = useState("");
+  const [resendAvailableIn, setResendAvailableIn] = useState(0);
   const verificationRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -42,6 +48,16 @@ export function VisitorRegistrationClient({
       verificationRef.current?.focus();
     }
   }, [step]);
+
+  useEffect(() => {
+    if (resendAvailableIn <= 0) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setResendAvailableIn((current) => Math.max(current - 1, 0));
+    }, 1000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [resendAvailableIn]);
 
   const bodyClassName =
     step === "verification"
@@ -122,11 +138,58 @@ export function VisitorRegistrationClient({
 
               <form
                 id="visitor-register-form"
-                onSubmit={(event) => {
+                onSubmit={async (event) => {
                   event.preventDefault();
                   const formData = new FormData(event.currentTarget);
-                  setEmail(String(formData.get("email") ?? ""));
-                  setStep("verification");
+                  const nextRegistration = sanitizeRegistrationInput({
+                    gender: String(formData.get("gender") ?? ""),
+                    firstName: String(formData.get("firstName") ?? "").trim(),
+                    lastName: String(formData.get("lastName") ?? "").trim(),
+                    countryCode: String(formData.get("countryCode") ?? ""),
+                    phone: String(formData.get("phone") ?? "").trim(),
+                    email: String(formData.get("email") ?? "").trim().toLowerCase(),
+                    country: String(formData.get("country") ?? ""),
+                    city: String(formData.get("city") ?? "").trim(),
+                    company: String(formData.get("company") ?? "").trim(),
+                    jobTitle: String(formData.get("jobTitle") ?? "").trim(),
+                    consent: formData.get("consent") === "on",
+                  });
+
+                  setPendingRegistration(nextRegistration);
+                  setEmail(nextRegistration.email);
+                  setSubmitError("");
+                  setSubmitState("submitting");
+
+                  try {
+                    const response = await fetch("/api/registration/request-otp", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify(nextRegistration),
+                    });
+
+                    const result = (await response.json()) as {
+                      ok: boolean;
+                      error?: string;
+                      resendInSeconds?: number;
+                    };
+
+                    if (!response.ok || !result.ok) {
+                      throw new Error(result.error ?? "Unable to send verification code.");
+                    }
+
+                    setResendAvailableIn(result.resendInSeconds ?? 60);
+                    setSubmitState("idle");
+                    setStep("verification");
+                  } catch (error) {
+                    setSubmitState("error");
+                    setSubmitError(
+                      error instanceof Error
+                        ? error.message
+                        : "We couldn't send your verification code right now.",
+                    );
+                  }
                 }}
               >
                 <div className="register-section">
@@ -259,8 +322,10 @@ export function VisitorRegistrationClient({
                   </span>
                 </label>
                 <button className="btn btn-accent lg block register-submit" type="submit">
-                  Complete registration <ArrowRight />
+                  {submitState === "submitting" ? "Sending verification code..." : "Complete registration"}{" "}
+                  <ArrowRight />
                 </button>
+                {submitError ? <p className="register-submit-error">{submitError}</p> : null}
                 <p className="register-privacy">
                   <LockKeyhole /> Your information is securely handled by Agri Africa.
                 </p>
@@ -272,10 +337,42 @@ export function VisitorRegistrationClient({
             <form
               className="register-verification"
               id="register-verification"
-              onSubmit={(event) => {
+              onSubmit={async (event) => {
                 event.preventDefault();
-                setReference(buildReference());
-                setStep("complete");
+                if (!pendingRegistration) {
+                  setSubmitState("error");
+                  setSubmitError("Your registration details are missing. Please complete the form again.");
+                  setStep("form");
+                  return;
+                }
+
+                const formData = new FormData(event.currentTarget);
+                const verificationCode = String(formData.get("verificationCode") ?? "").trim();
+
+                setSubmitState("submitting");
+                setSubmitError("");
+
+                try {
+                  const result = await signIn("attendee-otp", {
+                    email: pendingRegistration.email,
+                    otp: verificationCode,
+                    redirect: false,
+                  });
+
+                  if (!result?.ok) {
+                    throw new Error("The code is invalid, expired, or already used.");
+                  }
+
+                  const session = await getSession();
+                  setReference(session?.user?.registrationReference ?? "");
+                  setSubmitState("idle");
+                  setStep("complete");
+                } catch {
+                  setSubmitState("error");
+                  setSubmitError(
+                    "We couldn't complete your registration right now. Please try again in a moment.",
+                  );
+                }
               }}
             >
               <div className="register-success-icon">
@@ -301,18 +398,54 @@ export function VisitorRegistrationClient({
                 />
               </label>
               <button className="btn btn-accent lg block register-submit" type="submit">
-                Verify &amp; complete registration <ArrowRight />
+                {submitState === "submitting"
+                  ? "Completing registration..."
+                  : "Verify & complete registration"}{" "}
+                <ArrowRight />
               </button>
+              {submitError ? <p className="register-submit-error">{submitError}</p> : null}
               <button
                 className={`verification-resend${resendState ? " is-sent" : ""}`}
                 id="resend-otp"
                 type="button"
-                onClick={() => {
-                  setResendState(true);
-                  window.setTimeout(() => setResendState(false), 2500);
+                disabled={!pendingRegistration || resendAvailableIn > 0 || submitState === "submitting"}
+                onClick={async () => {
+                  if (!pendingRegistration) return;
+
+                  try {
+                    const response = await fetch("/api/registration/request-otp", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify(pendingRegistration),
+                    });
+                    const result = (await response.json()) as {
+                      ok: boolean;
+                      error?: string;
+                      resendInSeconds?: number;
+                    };
+
+                    if (!response.ok || !result.ok) {
+                      throw new Error(result.error ?? "Unable to resend code.");
+                    }
+
+                    setResendAvailableIn(result.resendInSeconds ?? 60);
+                    setResendState(true);
+                    setSubmitError("");
+                    window.setTimeout(() => setResendState(false), 2500);
+                  } catch (error) {
+                    setSubmitError(
+                      error instanceof Error ? error.message : "We couldn't resend your code right now.",
+                    );
+                  }
                 }}
               >
-                {resendState ? "Code resent" : "Resend code"}
+                {resendState
+                  ? "Code resent"
+                  : resendAvailableIn > 0
+                    ? `Resend in ${resendAvailableIn}s`
+                    : "Resend code"}
               </button>
             </form>
           ) : null}
