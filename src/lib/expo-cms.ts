@@ -336,9 +336,6 @@ export async function getExpoCmsSnapshot(): Promise<ExpoCmsSnapshot> {
   if (!snapshot.expoPage.theme) missingFields.push("expo-page.theme");
   if (!snapshot.expoPage.overviewIntro) missingFields.push("expo-page.overviewIntro");
   if (!snapshot.expoPage.overviewBody) missingFields.push("expo-page.overviewBody");
-  if (snapshot.expoPage.overviewGuests.length === 0) missingFields.push("expo-page.overviewGuests");
-  if (snapshot.expoPage.overviewObjectives.length === 0) missingFields.push("expo-page.overviewObjectives");
-  if (snapshot.expoPage.overviewCategories.length === 0) missingFields.push("expo-page.overviewCategories");
   if (!snapshot.expoPage.floorPlanUrl) missingFields.push("expo-page.floorPlan");
   if (snapshot.exhibitors.length === 0) missingFields.push("exhibitors");
   if (snapshot.supportUnits.length === 0) missingFields.push("support-units");
