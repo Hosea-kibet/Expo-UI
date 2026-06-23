@@ -62,7 +62,17 @@ async function strapiRequest<T>(path: string, init?: RequestInit) {
   const text = await response.text();
 
   if (!response.ok) {
-    throw new Error(text || `Strapi request failed with ${response.status}`);
+    // Parse Strapi error shape and surface a readable message instead of raw JSON
+    let message: string | undefined;
+    try {
+      const parsed = JSON.parse(text) as { error?: { message?: string; status?: number } };
+      message = parsed?.error?.message;
+    } catch {
+      // not JSON — use raw text below
+    }
+    const err = new Error(message || text || `Strapi request failed with ${response.status}`);
+    (err as Error & { status?: number }).status = response.status;
+    throw err;
   }
 
   return JSON.parse(text) as T;

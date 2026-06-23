@@ -20,7 +20,9 @@ export async function POST(request: NextRequest) {
     const status =
       typeof error === "object" && error && "status" in error && typeof error.status === "number"
         ? error.status
-        : 400;
+        : error instanceof Error && error.message.includes("already registered")
+          ? 409
+          : 400;
     const retryAfter =
       typeof error === "object" && error && "retryAfter" in error && typeof error.retryAfter === "number"
         ? error.retryAfter
