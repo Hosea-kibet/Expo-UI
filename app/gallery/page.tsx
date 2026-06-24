@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import GalleryClient from "@/src/components/gallery-client";
+import { getGallerySnapshot } from "@/src/lib/gallery-cms";
 import { getHomepageSnapshot } from "@/src/lib/homepage-cms";
 
 export const metadata: Metadata = {
@@ -7,7 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default async function GalleryPage() {
-  const homepage = await getHomepageSnapshot();
+  const [homepage, galleryItems] = await Promise.all([
+    getHomepageSnapshot(),
+    getGallerySnapshot(),
+  ]);
 
-  return <GalleryClient homepage={homepage} />;
+  return <GalleryClient homepage={homepage} items={galleryItems} />;
 }

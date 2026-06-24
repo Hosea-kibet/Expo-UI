@@ -102,6 +102,19 @@ export type ProgrammeDayContent = {
   sessions?: ProgrammeSessionContent[];
 };
 
+export type GalleryItemContent = {
+  title: string;
+  slug: string;
+  year: number;
+  mediaType: "image" | "video";
+  caption?: string;
+  alt?: string;
+  wide?: boolean;
+  sortOrder?: number;
+  media?: unknown;
+  poster?: unknown;
+};
+
 export async function getHomepageContent() {
   return getStrapiSingle<{ data: StrapiEntity<HomepageContent> | null }>("homepage", {
     populate: "*",
@@ -132,5 +145,14 @@ export async function getProgrammeDaysContent() {
   return getStrapiCollection<{ data: Array<StrapiEntity<ProgrammeDayContent>> }>("programme-days", {
     populate: "*",
     "sort[0]": "label:asc",
+  });
+}
+
+export async function getGalleryItemsContent() {
+  return getStrapiCollection<{ data: Array<StrapiEntity<GalleryItemContent>> }>("gallery-items", {
+    populate: "*",
+    "sort[0]": "year:desc",
+    "sort[1]": "sortOrder:asc",
+    "sort[2]": "title:asc",
   });
 }

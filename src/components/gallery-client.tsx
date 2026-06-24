@@ -19,73 +19,8 @@ import {
   Youtube,
 } from "lucide-react";
 import { PageBodyClass } from "@/src/components/page-body-class";
+import type { GallerySnapshotItem } from "@/src/lib/gallery-cms";
 import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
-
-type GalleryItem = {
-  year: "2025" | "2024";
-  type: "image" | "video";
-  src: string;
-  poster?: string;
-  title: string;
-  caption: string;
-  alt: string;
-  wide?: boolean;
-};
-
-const galleryItems: GalleryItem[] = [
-  {
-    year: "2025",
-    type: "video",
-    src: "/assets/hero-video.mp4",
-    poster: "/assets/hero-farmer.jpg",
-    title: "2025 Expo Highlights",
-    caption: "A moving portrait of the people and ideas that carried the 2025 Agri Africa programme.",
-    alt: "2025 Expo Highlights",
-    wide: true,
-  },
-  {
-    year: "2025",
-    type: "image",
-    src: "/assets/honored-guests/tito-mutai.jpg",
-    title: "Industry Conversations",
-    caption: "Leaders and practitioners gathering around Africa's agricultural future.",
-    alt: "Industry conversation at a past Agri Africa event",
-  },
-  {
-    year: "2025",
-    type: "image",
-    src: "/assets/honored-guests/johnson-sakaja.jpeg",
-    title: "Opening Day",
-    caption: "A packed opening day of dialogue, discovery, and collaboration.",
-    alt: "Opening day at a past Agri Africa event",
-  },
-  {
-    year: "2024",
-    type: "image",
-    src: "/assets/honored-guests/mutahi-kagwe.jpeg",
-    title: "Growing Partnerships",
-    caption: "The relationships behind more resilient agricultural value chains.",
-    alt: "Growing partnerships at a past Agri Africa event",
-  },
-  {
-    year: "2024",
-    type: "image",
-    src: "/assets/honored-guests/william-ruto.jpg",
-    title: "Agricultural Leadership",
-    caption: "Conversations on the people, policy, and innovation moving agriculture forward.",
-    alt: "Agricultural leadership at a past Agri Africa event",
-  },
-  {
-    year: "2024",
-    type: "video",
-    src: "/assets/hero-video.mp4",
-    poster: "/assets/hero-farmer.jpg",
-    title: "2024 Event Reel",
-    caption: "A look back at the people, places, and possibilities shared during the 2024 programme.",
-    alt: "2024 Agri Africa event reel",
-    wide: true,
-  },
-];
 
 function getSocialIcon(platform: HomepageSnapshot["socialLinks"][number]["platform"]) {
   switch (platform) {
@@ -100,21 +35,32 @@ function getSocialIcon(platform: HomepageSnapshot["socialLinks"][number]["platfo
   }
 }
 
-export default function GalleryClient({ homepage }: { homepage: HomepageSnapshot }) {
-  const [yearFilter, setYearFilter] = useState<"all" | "2025" | "2024">("all");
+export default function GalleryClient({
+  homepage,
+  items,
+}: {
+  homepage: HomepageSnapshot;
+  items: GallerySnapshotItem[];
+}) {
+  const [yearFilter, setYearFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<"all" | "image" | "video">("all");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const years = useMemo(
+    () => Array.from(new Set(items.map((item) => item.year))),
+    [items],
+  );
+
   const visibleItems = useMemo(
     () =>
-      galleryItems.filter(
+      items.filter(
         (item) =>
           (yearFilter === "all" || item.year === yearFilter) &&
           (typeFilter === "all" || item.type === typeFilter),
       ),
-    [typeFilter, yearFilter],
+    [items, typeFilter, yearFilter],
   );
 
   useEffect(() => {
@@ -166,7 +112,7 @@ export default function GalleryClient({ homepage }: { homepage: HomepageSnapshot
 
   const activeItem = visibleItems[activeIndex] ?? null;
 
-  const openModal = (item: GalleryItem) => {
+  const openModal = (item: GallerySnapshotItem) => {
     const nextIndex = visibleItems.findIndex((visibleItem) => visibleItem === item);
     if (nextIndex === -1) return;
     setActiveIndex(nextIndex);
@@ -305,20 +251,16 @@ export default function GalleryClient({ homepage }: { homepage: HomepageSnapshot
               >
                 All years
               </button>
-              <button
-                className={`gallery-filter${yearFilter === "2025" ? " active" : ""}`}
-                type="button"
-                onClick={() => setYearFilter("2025")}
-              >
-                2025
-              </button>
-              <button
-                className={`gallery-filter${yearFilter === "2024" ? " active" : ""}`}
-                type="button"
-                onClick={() => setYearFilter("2024")}
-              >
-                2024
-              </button>
+              {years.map((year) => (
+                <button
+                  key={year}
+                  className={`gallery-filter${yearFilter === year ? " active" : ""}`}
+                  type="button"
+                  onClick={() => setYearFilter(year)}
+                >
+                  {year}
+                </button>
+              ))}
             </div>
 
             <div className="gallery-filter-group" role="group" aria-label="Filter by media type">
@@ -349,7 +291,7 @@ export default function GalleryClient({ homepage }: { homepage: HomepageSnapshot
           </div>
 
           <div className="gallery-grid" id="gallery-grid">
-            {galleryItems.map((item) => {
+            {items.map((item) => {
               const hidden =
                 (yearFilter !== "all" && item.year !== yearFilter) ||
                 (typeFilter !== "all" && item.type !== typeFilter);
@@ -362,12 +304,12 @@ export default function GalleryClient({ homepage }: { homepage: HomepageSnapshot
                   hidden={hidden}
                   onClick={() => openModal(item)}
                 >
-                  {item.type === "video" && item.year === "2025" ? (
+                  {item.type === "video" ? (
                     <video muted playsInline preload="metadata" poster={item.poster}>
                       <source src={item.src} type="video/mp4" />
                     </video>
                   ) : (
-                    <img src={item.type === "video" ? item.poster : item.src} alt={item.alt} />
+                    <img src={item.src} alt={item.alt} />
                   )}
                   <span className="gallery-item-overlay">
                     {item.type === "video" ? (
@@ -379,7 +321,7 @@ export default function GalleryClient({ homepage }: { homepage: HomepageSnapshot
                       <small>
                         {item.year} · {item.type === "image" ? "Image" : "Video"}
                       </small>
-                      <strong>{item.title === "2025 Expo Highlights" ? "Expo Highlights" : item.title}</strong>
+                      <strong>{item.title}</strong>
                     </span>
                   </span>
                 </button>
@@ -389,6 +331,9 @@ export default function GalleryClient({ homepage }: { homepage: HomepageSnapshot
 
           <p className="gallery-empty" hidden={visibleItems.length !== 0}>
             No media matches these filters.
+          </p>
+          <p className="gallery-empty" hidden={items.length !== 0}>
+            No gallery items have been published in the CMS yet.
           </p>
         </section>
       </main>
