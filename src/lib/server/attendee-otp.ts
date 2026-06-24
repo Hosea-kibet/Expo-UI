@@ -1,6 +1,9 @@
 import type { PendingRegistration } from "@/src/lib/registration";
 import { generateOtpCode, hashOtp, verifyOtpHash } from "@/src/lib/server/otp";
-import { sendRegistrationOtpEmail } from "@/src/lib/server/mailer";
+import {
+  sendRegistrationConfirmationEmail,
+  sendRegistrationOtpEmail,
+} from "@/src/lib/server/mailer";
 import {
   attendeePayloadFromRegistration,
   createAttendee,
@@ -125,6 +128,12 @@ export async function verifyAttendeeOtp(email: string, otp: string) {
     otpSalt: null,
     otpExpiresAt: null,
     otpAttemptCount: currentAttempts + 1,
+  });
+
+  await sendRegistrationConfirmationEmail({
+    email: verifiedAttendee.email,
+    firstName: verifiedAttendee.firstName,
+    registrationReference: verifiedAttendee.registrationReference,
   });
 
   return verifiedAttendee;
