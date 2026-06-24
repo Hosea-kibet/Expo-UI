@@ -53,7 +53,7 @@ export function ExpoFooter({ homepage }: { homepage: HomepageSnapshot }) {
               <div className="h">Expo</div>
               <Link href="/2026-aiae-expo">2026 Expo page</Link>
               <Link href="/visitor-registration">Register Now</Link>
-              <Link href="/#gallery">Gallery</Link>
+              <Link href="/gallery">Gallery</Link>
             </div>
             <div className="foot-col reveal-up in" style={{ transitionDelay: ".2s" }}>
               <div className="h">Partners</div>

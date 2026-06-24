@@ -196,7 +196,7 @@ function ExpoFooter({
               <div className="h">Expo</div>
               <Link href="/2026-aiae-expo">2026 Expo page</Link>
               <Link href="/visitor-registration">Register Now</Link>
-              <Link href="/#gallery">Gallery</Link>
+              <Link href="/gallery">Gallery</Link>
             </div>
             <div className="foot-col reveal-up in" style={{ transitionDelay: ".2s" }}>
               <div className="h">Partners</div>
@@ -760,7 +760,7 @@ export default function ExpoClient({
                 ))}
               </div>
             </div>
-            <a href="#contact">Gallery</a>
+            <Link href="/gallery">Gallery</Link>
           </nav>
           <div className="nav-right">
             <button className="menu-toggle" id="menu-toggle" type="button" aria-controls="mobile-menu" aria-expanded="false">
@@ -781,7 +781,7 @@ export default function ExpoClient({
                 {tabLabels[tab]}
               </a>
             ))}
-            <a href="#contact">Gallery</a>
+            <Link href="/gallery">Gallery</Link>
             <Link href="/visitor-registration">Register Now</Link>
           </div>
         </div>
