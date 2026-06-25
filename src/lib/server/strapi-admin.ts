@@ -6,7 +6,9 @@ export type AttendeeRecord = {
   documentId: string;
   registrationReference: string;
   registrationStatus: "pending-verification" | "verified";
+  attendanceStatus: "pending" | "registered" | "confirmed";
   registeredAt: string;
+  checkedInAt?: string | null;
   gender: string;
   firstName: string;
   lastName: string;
@@ -18,6 +20,7 @@ export type AttendeeRecord = {
   city: string;
   company?: string;
   jobTitle?: string;
+  notes?: string | null;
   consent: boolean;
   otpHash?: string | null;
   otpSalt?: string | null;
@@ -29,6 +32,15 @@ export type AttendeeRecord = {
 
 type StrapiSingleResponse<T> = { data: T | null };
 type StrapiCollectionResponse<T> = { data: T[] };
+type StrapiLocalAuthResponse = {
+  jwt: string;
+  user: {
+    id: number;
+    username: string;
+    email: string;
+    blocked?: boolean;
+  };
+};
 
 function getStrapiAdminBaseUrl() {
   const strapiUrl = process.env.STRAPI_URL;
@@ -78,6 +90,32 @@ async function strapiRequest<T>(path: string, init?: RequestInit) {
   return JSON.parse(text) as T;
 }
 
+async function strapiJwtRequest<T>(path: string, jwt: string, init?: RequestInit) {
+  return strapiRequest<T>(path, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${jwt}`,
+      ...(init?.headers ?? {}),
+    },
+  });
+}
+
+export async function loginStrapiUser(identifier: string, password: string) {
+  const result = await strapiRequest<StrapiLocalAuthResponse>("/auth/local", {
+    method: "POST",
+    body: JSON.stringify({
+      identifier,
+      password,
+    }),
+  });
+
+  if (!result.jwt || !result.user) {
+    throw new Error("Strapi did not return an authenticated user.");
+  }
+
+  return result;
+}
+
 export async function getAttendeeByEmail(email: string) {
   const params = new URLSearchParams({
     "filters[email][$eq]": email,
@@ -89,6 +127,35 @@ export async function getAttendeeByEmail(email: string) {
   );
 
   return result.data[0] ?? null;
+}
+
+export async function getAttendeeByReference(reference: string, jwt: string) {
+  const params = new URLSearchParams({
+    "filters[registrationReference][$eq]": reference,
+    "pagination[pageSize]": "1",
+    sort: "registeredAt:desc",
+  });
+
+  const result = await strapiJwtRequest<StrapiCollectionResponse<AttendeeRecord>>(
+    `/attendees?${params.toString()}`,
+    jwt,
+  );
+
+  return result.data[0] ?? null;
+}
+
+export async function listAttendees(jwt: string) {
+  const params = new URLSearchParams({
+    "pagination[pageSize]": "250",
+    sort: "registeredAt:desc",
+  });
+
+  const result = await strapiJwtRequest<StrapiCollectionResponse<AttendeeRecord>>(
+    `/attendees?${params.toString()}`,
+    jwt,
+  );
+
+  return result.data;
 }
 
 export async function createAttendee(data: Record<string, unknown>) {
@@ -117,6 +184,27 @@ export async function updateAttendee(documentId: string, data: Record<string, un
   return result.data;
 }
 
+export async function updateAttendeeWithJwt(
+  documentId: string,
+  data: Record<string, unknown>,
+  jwt: string,
+) {
+  const result = await strapiJwtRequest<StrapiSingleResponse<AttendeeRecord>>(
+    `/attendees/${documentId}`,
+    jwt,
+    {
+      method: "PUT",
+      body: JSON.stringify({ data }),
+    },
+  );
+
+  if (!result.data) {
+    throw new Error("Strapi did not return the updated attendee record.");
+  }
+
+  return result.data;
+}
+
 export function attendeePayloadFromRegistration(
   registration: PendingRegistration,
   extra: Record<string, unknown> = {},
@@ -133,6 +221,7 @@ export function attendeePayloadFromRegistration(
     city: registration.city,
     company: registration.company || null,
     jobTitle: registration.jobTitle || null,
+    notes: null,
     consent: registration.consent,
     ...extra,
   };

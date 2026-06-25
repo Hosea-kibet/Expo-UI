@@ -1,5 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { loginStrapiUser } from "@/src/lib/server/strapi-admin";
 import { verifyAttendeeOtp } from "@/src/lib/server/attendee-otp";
 
 export const authOptions: NextAuthOptions = {
@@ -38,20 +39,69 @@ export const authOptions: NextAuthOptions = {
         };
       },
     }),
+    Credentials({
+      id: "strapi-admin",
+      name: "Strapi Admin",
+      credentials: {
+        identifier: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const identifier = String(credentials?.identifier ?? "").trim();
+        const password = String(credentials?.password ?? "");
+
+        if (!identifier || !password) {
+          return null;
+        }
+
+        try {
+          const result = await loginStrapiUser(identifier, password);
+
+          if (result.user.blocked) {
+            return null;
+          }
+
+          return {
+            id: `strapi-user-${result.user.id}`,
+            email: result.user.email,
+            name: result.user.username,
+            role: "admin",
+            strapiJwt: result.jwt,
+          };
+        } catch {
+          return null;
+        }
+      },
+    }),
   ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.attendeeId = user.id;
-        token.registrationReference = (user as { registrationReference?: string }).registrationReference;
+        token.authProvider = user.role === "admin" ? "strapi-admin" : "attendee-otp";
+
+        if (user.role === "admin") {
+          token.adminId = user.id;
+          token.adminName = user.name;
+          token.strapiJwt = (user as { strapiJwt?: string }).strapiJwt;
+          delete token.attendeeId;
+          delete token.registrationReference;
+        } else {
+          token.attendeeId = user.id;
+          token.registrationReference = (user as { registrationReference?: string }).registrationReference;
+          delete token.adminId;
+          delete token.adminName;
+          delete token.strapiJwt;
+        }
       }
 
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = String(token.attendeeId ?? "");
+        session.user.id = String(token.attendeeId ?? token.adminId ?? "");
         session.user.registrationReference = String(token.registrationReference ?? "");
+        session.user.role = token.authProvider === "strapi-admin" ? "admin" : "attendee";
+        session.user.strapiJwt = token.authProvider === "strapi-admin" ? String(token.strapiJwt ?? "") : "";
       }
 
       return session;

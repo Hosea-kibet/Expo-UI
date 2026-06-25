@@ -59,6 +59,7 @@ export async function requestAttendeeOtp(registration: PendingRegistration) {
     otpAttemptCount: 0,
     otpUsedAt: null,
     registrationStatus: "pending-verification",
+    attendanceStatus: "pending",
   } as const;
 
   const savedAttendee = attendee
@@ -123,6 +124,7 @@ export async function verifyAttendeeOtp(email: string, otp: string) {
 
   const verifiedAttendee = await updateAttendee(attendee.documentId, {
     registrationStatus: "verified",
+    attendanceStatus: "registered",
     otpUsedAt: new Date().toISOString(),
     otpHash: null,
     otpSalt: null,

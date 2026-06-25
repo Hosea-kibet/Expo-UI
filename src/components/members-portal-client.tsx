@@ -29,6 +29,9 @@ export function MembersPortalClient({
         <Link className="portal-back" href="/2026-aiae-expo">
           <ArrowLeft /> Back to Expo
         </Link>
+        <Link className="portal-back" href="/admin">
+          Admin Check-in
+        </Link>
       </header>
 
       <main className="portal-main">

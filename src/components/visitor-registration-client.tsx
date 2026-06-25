@@ -80,6 +80,9 @@ export function VisitorRegistrationClient({
           <Link href="/members-portal">
             Members portal <ArrowUpRight />
           </Link>
+          <Link href="/admin">
+            Admin check-in <ArrowUpRight />
+          </Link>
         </div>
       </header>
 
