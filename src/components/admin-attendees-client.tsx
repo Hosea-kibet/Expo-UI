@@ -13,7 +13,7 @@ import {
   Search,
   ShieldCheck,
 } from "lucide-react";
-import { useDeferredValue, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, useDeferredValue, useEffect, useRef, useState } from "react";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import type { AttendeeListResult, AttendeeRecord } from "@/src/lib/server/strapi-admin";
 
@@ -22,7 +22,7 @@ type AlertState = {
   type: "success" | "error" | "info";
   message: string;
 };
-type PendingAction = `${string}:save` | `${string}:confirm` | "scan" | "refresh" | "login" | null;
+type PendingAction = `${string}:save` | "scan" | "refresh" | "login" | null;
 
 function statusLabel(status: AttendanceStatus) {
   if (status === "confirmed") return "Confirmed";
@@ -69,6 +69,19 @@ export function AdminAttendeesClient({
   const deferredSearch = useDeferredValue(searchInput);
   const hasMountedRef = useRef(false);
   const requestSequenceRef = useRef(0);
+  const scanAutoSubmitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scanBurstRef = useRef({
+    count: 0,
+    lastAt: 0,
+  });
+
+  useEffect(() => {
+    return () => {
+      if (scanAutoSubmitTimeoutRef.current) {
+        clearTimeout(scanAutoSubmitTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setAttendees(initialAttendees);
@@ -187,8 +200,8 @@ export function AdminAttendeesClient({
     }
   }
 
-  async function handleStatusUpdate(documentId: string, attendanceStatus: AttendanceStatus) {
-    const actionKey: PendingAction = `${documentId}:${attendanceStatus === "confirmed" ? "confirm" : "save"}`;
+  async function handleStatusUpdate(documentId: string) {
+    const actionKey: PendingAction = `${documentId}:save`;
     setPendingAction(actionKey);
     setAlert(null);
 
@@ -198,7 +211,6 @@ export function AdminAttendeesClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           documentId,
-          attendanceStatus,
           notes: notesDrafts[documentId] ?? "",
         }),
       });
@@ -207,6 +219,7 @@ export function AdminAttendeesClient({
         ok: boolean;
         attendee?: AttendeeRecord;
         error?: string;
+        warning?: string;
       };
 
       if (!response.ok || !result.ok || !result.attendee) {
@@ -224,11 +237,10 @@ export function AdminAttendeesClient({
         [documentId]: updatedAttendee.notes ?? "",
       }));
       setAlert({
-        type: "success",
-        message:
-          attendanceStatus === "confirmed"
-            ? `${name} has been checked in successfully.`
-            : `Notes saved for ${name}.`,
+        type: result.warning ? "info" : "success",
+        message: result.warning
+          ? `Notes saved for ${name}. ${result.warning}`
+          : `Notes saved for ${name}.`,
       });
     } catch (error) {
       setAlert({
@@ -261,6 +273,7 @@ export function AdminAttendeesClient({
         ok: boolean;
         attendee?: AttendeeRecord;
         error?: string;
+        warning?: string;
       };
 
       if (!response.ok || !result.ok || !result.attendee) {
@@ -280,8 +293,8 @@ export function AdminAttendeesClient({
         [confirmedAttendee.documentId]: confirmedAttendee.notes ?? "",
       }));
       setAlert({
-        type: "success",
-        message: `${name} was confirmed successfully.`,
+        type: result.warning ? "info" : "success",
+        message: result.warning ? `${name} was confirmed successfully. ${result.warning}` : `${name} was confirmed successfully.`,
       });
       setScanValue("");
       setScanNotes("");
@@ -293,6 +306,59 @@ export function AdminAttendeesClient({
       });
     } finally {
       setPendingAction(null);
+    }
+  }
+
+  function scheduleAutomaticScanSubmit(nextValue: string) {
+    if (scanAutoSubmitTimeoutRef.current) {
+      clearTimeout(scanAutoSubmitTimeoutRef.current);
+    }
+
+    scanAutoSubmitTimeoutRef.current = setTimeout(() => {
+      if (pendingAction || !nextValue.trim()) {
+        return;
+      }
+
+      setScanValue(nextValue);
+      void handleScanConfirm();
+    }, 120);
+  }
+
+  function handleScanValueChange(event: ChangeEvent<HTMLInputElement>) {
+    const nextValue = event.target.value.toUpperCase();
+    const inputEvent = event.nativeEvent as InputEvent;
+    const inputType = inputEvent.inputType ?? "";
+    const now = Date.now();
+    const isPaste = inputType === "insertFromPaste";
+    const insertedCharacterCount = (inputEvent.data ?? "").length;
+    const isRapidCharacterEntry =
+      inputType === "insertText" &&
+      insertedCharacterCount === 1 &&
+      nextValue.length > scanValue.length &&
+      now - scanBurstRef.current.lastAt < 45;
+
+    setScanValue(nextValue);
+
+    if (isPaste || pendingAction) {
+      scanBurstRef.current = {
+        count: 0,
+        lastAt: now,
+      };
+      if (scanAutoSubmitTimeoutRef.current) {
+        clearTimeout(scanAutoSubmitTimeoutRef.current);
+      }
+      return;
+    }
+
+    scanBurstRef.current = {
+      count: isRapidCharacterEntry ? scanBurstRef.current.count + 1 : 1,
+      lastAt: now,
+    };
+
+    if (scanBurstRef.current.count >= 6) {
+      scheduleAutomaticScanSubmit(nextValue);
+    } else if (scanAutoSubmitTimeoutRef.current) {
+      clearTimeout(scanAutoSubmitTimeoutRef.current);
     }
   }
 
@@ -409,7 +475,7 @@ export function AdminAttendeesClient({
             <ScanLine />
           </div>
           <p>
-            Most USB QR scanners type directly into the focused field. Paste or scan the registration reference and we
+            Type in or scan the registration reference and we
             will mark the attendee as confirmed.
           </p>
           <form
@@ -423,7 +489,7 @@ export function AdminAttendeesClient({
               Registration reference
               <input
                 value={scanValue}
-                onChange={(event) => setScanValue(event.target.value.toUpperCase())}
+                onChange={handleScanValueChange}
                 placeholder="AIAE26-ABC123"
                 required
               />
@@ -436,10 +502,12 @@ export function AdminAttendeesClient({
                 placeholder="VIP guest, arrived with team, etc."
               />
             </label>
-            <button className="btn btn-accent" type="submit" disabled={isScanning}>
-              {isScanning ? <LoaderCircle className="spin" /> : <CheckCircle2 />}
-              {isScanning ? "Confirming..." : "Confirm attendee"}
-            </button>
+            {scanValue.trim() ? (
+              <button className="btn btn-accent" type="submit" disabled={isScanning}>
+                {isScanning ? <LoaderCircle className="spin" /> : <CheckCircle2 />}
+                {isScanning ? "Confirming..." : "Confirm attendee"}
+              </button>
+            ) : null}
           </form>
           {alert ? (
             <div className={`admin-inline-message is-${alert.type}`} role={alert.type === "error" ? "alert" : "status"}>
@@ -461,7 +529,7 @@ export function AdminAttendeesClient({
                 className="admin-search-input"
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Search by name, email, reference, company"
+                placeholder="Search by name, email, company"
               />
             </label>
           </div>
@@ -470,7 +538,6 @@ export function AdminAttendeesClient({
               <thead>
                 <tr>
                   <th>Attendee</th>
-                  <th>Reference</th>
                   <th>Status</th>
                   <th>Notes</th>
                   <th>Action</th>
@@ -479,9 +546,7 @@ export function AdminAttendeesClient({
               <tbody>
                 {attendees.map((attendee) => {
                   const saveActionKey: PendingAction = `${attendee.documentId}:save`;
-                  const confirmActionKey: PendingAction = `${attendee.documentId}:confirm`;
                   const isSaving = pendingAction === saveActionKey;
-                  const isConfirming = pendingAction === confirmActionKey;
 
                   return (
                     <tr key={attendee.documentId}>
@@ -490,7 +555,6 @@ export function AdminAttendeesClient({
                         <span>{attendee.email}</span>
                         <span>{attendee.company || attendee.phone}</span>
                       </td>
-                      <td data-label="Reference">{attendee.registrationReference}</td>
                       <td data-label="Status">
                         <span className={`admin-status-pill is-${attendee.attendanceStatus}`}>
                           {statusLabel(attendee.attendanceStatus)}
@@ -514,20 +578,11 @@ export function AdminAttendeesClient({
                           <button
                             className="btn btn-light sm"
                             type="button"
-                            disabled={isSaving || isConfirming || isTableLoading}
-                            onClick={() => void handleStatusUpdate(attendee.documentId, attendee.attendanceStatus)}
+                            disabled={isSaving || isTableLoading}
+                            onClick={() => void handleStatusUpdate(attendee.documentId)}
                           >
                             {isSaving ? <LoaderCircle className="spin" /> : null}
                             {isSaving ? "Saving..." : "Save notes"}
-                          </button>
-                          <button
-                            className="btn btn-accent sm"
-                            type="button"
-                            disabled={isSaving || isConfirming || isTableLoading}
-                            onClick={() => void handleStatusUpdate(attendee.documentId, "confirmed")}
-                          >
-                            {isConfirming ? <LoaderCircle className="spin" /> : <CheckCircle2 />}
-                            {isConfirming ? "Confirming..." : "Confirm"}
                           </button>
                         </div>
                       </td>
@@ -536,16 +591,16 @@ export function AdminAttendeesClient({
                 })}
                 {!isTableLoading && attendees.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="admin-empty-cell">
+                    <td colSpan={4} className="admin-empty-cell">
                       {search
-                        ? "No attendees matched that search. Try a name, email, company, or reference."
+                        ? "No attendees matched that search. Try a name, email, or company."
                         : "No attendees found yet."}
                     </td>
                   </tr>
                 ) : null}
                 {isTableLoading ? (
                   <tr>
-                    <td colSpan={5} className="admin-empty-cell">
+                    <td colSpan={4} className="admin-empty-cell">
                       <div className="admin-loading-state">
                         <LoaderCircle className="spin" />
                         <span>Loading attendees from Strapi...</span>

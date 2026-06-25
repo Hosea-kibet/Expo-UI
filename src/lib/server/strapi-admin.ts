@@ -284,6 +284,15 @@ export async function getAttendeeByReference(reference: string, jwt?: string) {
   return result.data[0] ?? null;
 }
 
+export async function getAttendeeByDocumentId(documentId: string, jwt?: string) {
+  const path = `/attendees/${documentId}`;
+  const result = jwt
+    ? await strapiJwtRequest<StrapiSingleResponse<AttendeeRecord>>(path, jwt)
+    : await strapiRequest<StrapiSingleResponse<AttendeeRecord>>(path);
+
+  return result.data;
+}
+
 export async function listAttendees(
   jwt?: string,
   { page = 1, pageSize = 25, search = "" }: AttendeeListParams = {},
@@ -297,7 +306,7 @@ export async function listAttendees(
   const normalizedSearch = search.trim();
 
   if (normalizedSearch) {
-    const searchFields = ["firstName", "lastName", "email", "registrationReference", "company", "notes"];
+    const searchFields = ["firstName", "lastName", "email", "company", "notes"];
 
     searchFields.forEach((field, index) => {
       params.set(`filters[$or][${index}][${field}][$containsi]`, normalizedSearch);

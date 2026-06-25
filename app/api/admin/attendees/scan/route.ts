@@ -4,6 +4,7 @@ import {
   updateAttendee,
 } from "@/src/lib/server/strapi-admin";
 import { getAdminTokenFromRequest } from "@/src/lib/server/admin-session";
+import { sendEventWelcomeEmail } from "@/src/lib/server/mailer";
 
 function unauthorized() {
   return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
@@ -49,8 +50,20 @@ export async function POST(request: NextRequest) {
     };
 
     const confirmedAttendee = await updateAttendee(attendee.documentId, payload);
+    let warning: string | undefined;
 
-    return NextResponse.json({ ok: true, attendee: confirmedAttendee });
+    if (attendee.attendanceStatus !== "confirmed" && confirmedAttendee.attendanceStatus === "confirmed") {
+      try {
+        await sendEventWelcomeEmail({
+          email: confirmedAttendee.email,
+          firstName: confirmedAttendee.firstName,
+        });
+      } catch {
+        warning = "Attendee was confirmed, but the welcome email could not be sent.";
+      }
+    }
+
+    return NextResponse.json({ ok: true, attendee: confirmedAttendee, warning });
   } catch (error) {
     return NextResponse.json(
       {

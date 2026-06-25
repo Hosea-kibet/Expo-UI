@@ -156,3 +156,51 @@ export async function sendRegistrationConfirmationEmail({
     `,
   });
 }
+
+export async function sendEventWelcomeEmail({
+  email,
+  firstName,
+}: {
+  email: string;
+  firstName: string;
+}) {
+  const config = getMailerConfig();
+  const transporter = nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    auth: config.auth,
+  });
+
+  const safeFirstName = escapeHtml(firstName || "there");
+
+  await transporter.sendMail({
+    from: config.from,
+    to: email,
+    subject: "Welcome to Agri Africa Expo",
+    text: [
+      `Hi ${firstName || "there"},`,
+      "",
+      "Welcome to Agri Africa Expo.",
+      "Your event confirmation is complete and we are glad to have you with us.",
+      "",
+      "Please keep an eye on your email for event updates and onsite guidance.",
+    ].join("\n"),
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#173422;background:#f4efe4;padding:32px">
+        <div style="max-width:560px;margin:0 auto;background:#fffdf8;border-radius:20px;padding:32px">
+          <p style="margin:0 0 12px;font-size:14px;letter-spacing:0.12em;text-transform:uppercase;color:#e26f2d">
+            Welcome to the event
+          </p>
+          <h1 style="margin:0 0 16px;font-size:34px;line-height:1.1;color:#173422">You're confirmed for Agri Africa Expo.</h1>
+          <p style="margin:0 0 16px;font-size:18px;color:#425466">
+            Hi ${safeFirstName}, your event confirmation is complete and we are excited to welcome you.
+          </p>
+          <p style="margin:0;font-size:15px;color:#425466">
+            Watch your inbox for event updates, timing details, and any onsite guidance before the expo.
+          </p>
+        </div>
+      </div>
+    `,
+  });
+}

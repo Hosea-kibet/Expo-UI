@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  getAttendeeByDocumentId,
   listAttendees,
   updateAttendee,
 } from "@/src/lib/server/strapi-admin";
@@ -63,19 +64,31 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    const existingAttendee = await getAttendeeByDocumentId(documentId);
+
+    if (!existingAttendee) {
+      return NextResponse.json(
+        { ok: false, error: "Attendee not found." },
+        { status: 404 },
+      );
+    }
+
+    if (body.attendanceStatus === "confirmed") {
+      return NextResponse.json(
+        { ok: false, error: "Manual confirmation is not allowed here. Use the reference or QR check-in flow." },
+        { status: 400 },
+      );
+    }
+
     const nextStatus =
-      body.attendanceStatus && ["pending", "registered", "confirmed"].includes(body.attendanceStatus)
+      body.attendanceStatus === "pending" || body.attendanceStatus === "registered"
         ? body.attendanceStatus
         : undefined;
 
     const payload = {
       ...(nextStatus ? { attendanceStatus: nextStatus } : {}),
       ...(body.notes !== undefined ? { notes: String(body.notes).trim() || null } : {}),
-      ...(nextStatus === "confirmed"
-        ? { checkedInAt: new Date().toISOString() }
-        : nextStatus
-          ? { checkedInAt: null }
-          : {}),
+      ...(nextStatus ? { checkedInAt: null } : {}),
     };
 
     const attendee = await updateAttendee(documentId, payload);
