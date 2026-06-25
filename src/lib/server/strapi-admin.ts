@@ -32,6 +32,17 @@ export type AttendeeRecord = {
 
 type StrapiSingleResponse<T> = { data: T | null };
 type StrapiCollectionResponse<T> = { data: T[] };
+type StrapiPaginatedCollectionResponse<T> = {
+  data: T[];
+  meta?: {
+    pagination?: {
+      page: number;
+      pageSize: number;
+      pageCount: number;
+      total: number;
+    };
+  };
+};
 type StrapiAdminLoginResponse = {
   data?: {
     token?: string;
@@ -60,6 +71,23 @@ export type ExpoAuthResult = {
   authProvider: "strapi-admin";
   strapiRoleName?: string;
   strapiRoleType?: string;
+};
+
+export type AttendeeListParams = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+};
+
+export type AttendeeListResult = {
+  attendees: AttendeeRecord[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    pageCount: number;
+    total: number;
+  };
+  search: string;
 };
 
 function normalizeExpoRoleName(roleName: string) {
@@ -256,18 +284,43 @@ export async function getAttendeeByReference(reference: string, jwt?: string) {
   return result.data[0] ?? null;
 }
 
-export async function listAttendees(jwt?: string) {
+export async function listAttendees(
+  jwt?: string,
+  { page = 1, pageSize = 25, search = "" }: AttendeeListParams = {},
+): Promise<AttendeeListResult> {
   const params = new URLSearchParams({
-    "pagination[pageSize]": "250",
+    "pagination[page]": String(Math.max(1, page)),
+    "pagination[pageSize]": String(Math.min(100, Math.max(1, pageSize))),
     sort: "registeredAt:desc",
   });
 
+  const normalizedSearch = search.trim();
+
+  if (normalizedSearch) {
+    const searchFields = ["firstName", "lastName", "email", "registrationReference", "company", "notes"];
+
+    searchFields.forEach((field, index) => {
+      params.set(`filters[$or][${index}][${field}][$containsi]`, normalizedSearch);
+    });
+  }
+
   const path = `/attendees?${params.toString()}`;
   const result = jwt
-    ? await strapiJwtRequest<StrapiCollectionResponse<AttendeeRecord>>(path, jwt)
-    : await strapiRequest<StrapiCollectionResponse<AttendeeRecord>>(path);
+    ? await strapiJwtRequest<StrapiPaginatedCollectionResponse<AttendeeRecord>>(path, jwt)
+    : await strapiRequest<StrapiPaginatedCollectionResponse<AttendeeRecord>>(path);
 
-  return result.data;
+  const pagination = result.meta?.pagination ?? {
+    page: Math.max(1, page),
+    pageSize: Math.min(100, Math.max(1, pageSize)),
+    pageCount: 1,
+    total: result.data.length,
+  };
+
+  return {
+    attendees: result.data,
+    pagination,
+    search: normalizedSearch,
+  };
 }
 
 export async function createAttendee(data: Record<string, unknown>) {

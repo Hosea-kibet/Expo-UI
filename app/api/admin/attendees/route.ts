@@ -17,8 +17,18 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const attendees = await listAttendees();
-    return NextResponse.json({ ok: true, attendees });
+    const searchParams = request.nextUrl.searchParams;
+    const page = Number(searchParams.get("page") ?? "1");
+    const pageSize = Number(searchParams.get("pageSize") ?? "25");
+    const search = searchParams.get("q") ?? searchParams.get("search") ?? "";
+
+    const result = await listAttendees(undefined, {
+      page: Number.isFinite(page) ? page : 1,
+      pageSize: Number.isFinite(pageSize) ? pageSize : 25,
+      search,
+    });
+
+    return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     return NextResponse.json(
       {

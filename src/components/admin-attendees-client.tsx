@@ -2,12 +2,27 @@
 
 import Link from "next/link";
 import { signIn, signOut } from "next-auth/react";
-import { ArrowLeft, CheckCircle2, LogOut, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  LoaderCircle,
+  LogOut,
+  RefreshCw,
+  ScanLine,
+  Search,
+  ShieldCheck,
+} from "lucide-react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { PageBodyClass } from "@/src/components/page-body-class";
-import type { AttendeeRecord } from "@/src/lib/server/strapi-admin";
+import type { AttendeeListResult, AttendeeRecord } from "@/src/lib/server/strapi-admin";
 
 type AttendanceStatus = AttendeeRecord["attendanceStatus"];
+type AlertState = {
+  type: "success" | "error" | "info";
+  message: string;
+};
+type PendingAction = `${string}:save` | `${string}:confirm` | "scan" | "refresh" | "login" | null;
 
 function statusLabel(status: AttendanceStatus) {
   if (status === "confirmed") return "Confirmed";
@@ -15,148 +30,277 @@ function statusLabel(status: AttendanceStatus) {
   return "Pending";
 }
 
+function attendeeName(attendee: AttendeeRecord) {
+  return `${attendee.firstName} ${attendee.lastName}`.trim();
+}
+
 export function AdminAttendeesClient({
   initialAttendees,
+  initialPagination,
+  initialSearch,
   isAuthenticated,
   adminName,
   initialError,
 }: {
   initialAttendees: AttendeeRecord[];
+  initialPagination: AttendeeListResult["pagination"];
+  initialSearch: string;
   isAuthenticated: boolean;
   adminName: string;
   initialError: string;
 }) {
   const [attendees, setAttendees] = useState(initialAttendees);
+  const [pagination, setPagination] = useState(initialPagination);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [scanValue, setScanValue] = useState("");
   const [scanNotes, setScanNotes] = useState("");
-  const [search, setSearch] = useState("");
-  const [message, setMessage] = useState(initialError);
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [search, setSearch] = useState(initialSearch);
+  const [alert, setAlert] = useState<AlertState | null>(
+    initialError ? { type: "error", message: initialError } : null,
+  );
   const [notesDrafts, setNotesDrafts] = useState<Record<string, string>>(() =>
     Object.fromEntries(initialAttendees.map((attendee) => [attendee.documentId, attendee.notes ?? ""])),
   );
-  const [isPending, startTransition] = useTransition();
+  const [isTableLoading, setIsTableLoading] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const deferredSearch = useDeferredValue(searchInput);
+  const hasMountedRef = useRef(false);
+  const requestSequenceRef = useRef(0);
 
   useEffect(() => {
     setAttendees(initialAttendees);
+    setPagination(initialPagination);
+    setSearchInput(initialSearch);
+    setSearch(initialSearch);
     setNotesDrafts(
       Object.fromEntries(initialAttendees.map((attendee) => [attendee.documentId, attendee.notes ?? ""])),
     );
-  }, [initialAttendees]);
+    setAlert(initialError ? { type: "error", message: initialError } : null);
+  }, [initialAttendees, initialPagination, initialSearch, initialError]);
 
-  async function refreshAttendees() {
-    const response = await fetch("/api/admin/attendees", { cache: "no-store" });
-    const result = (await response.json()) as {
-      ok: boolean;
-      attendees?: AttendeeRecord[];
-      error?: string;
-    };
+  useEffect(() => {
+    const normalizedSearch = deferredSearch.trim();
 
-    if (!response.ok || !result.ok || !result.attendees) {
-      throw new Error(result.error ?? "Unable to refresh attendees.");
+    if (normalizedSearch === search) {
+      return;
     }
 
-    setAttendees(result.attendees);
-    setNotesDrafts(
-      Object.fromEntries(result.attendees.map((attendee) => [attendee.documentId, attendee.notes ?? ""])),
-    );
+    setSearch(normalizedSearch);
+    setPagination((current) => ({
+      ...current,
+      page: 1,
+    }));
+  }, [deferredSearch, search]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
+    void fetchAttendees(pagination.page, search, true).catch((error) => {
+      setAlert({
+        type: "error",
+        message: error instanceof Error ? error.message : "Unable to load attendees.",
+      });
+    });
+  }, [isAuthenticated, pagination.page, search]);
+
+  async function fetchAttendees(page: number, query: string, showLoader = true) {
+    const requestId = requestSequenceRef.current + 1;
+    requestSequenceRef.current = requestId;
+
+    if (showLoader) {
+      setIsTableLoading(true);
+    }
+
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pagination.pageSize),
+      });
+
+      if (query.trim()) {
+        params.set("q", query.trim());
+      }
+
+      const response = await fetch(`/api/admin/attendees?${params.toString()}`, {
+        cache: "no-store",
+      });
+
+      const result = (await response.json()) as {
+        ok: boolean;
+        attendees?: AttendeeRecord[];
+        pagination?: AttendeeListResult["pagination"];
+        search?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !result.ok || !result.attendees || !result.pagination) {
+        throw new Error(result.error ?? "Unable to load attendees.");
+      }
+
+      if (requestSequenceRef.current !== requestId) {
+        return;
+      }
+
+      setAttendees(result.attendees);
+      setPagination(result.pagination);
+      setSearch(result.search ?? query.trim());
+      setNotesDrafts(
+        Object.fromEntries(result.attendees.map((attendee) => [attendee.documentId, attendee.notes ?? ""])),
+      );
+    } finally {
+      if (requestSequenceRef.current === requestId) {
+        setIsTableLoading(false);
+      }
+    }
+  }
+
+  async function refreshAttendees() {
+    setAlert({
+      type: "info",
+      message: "Refreshing attendee records from Strapi...",
+    });
+    setPendingAction("refresh");
+
+    try {
+      await fetchAttendees(pagination.page, search, true);
+      setAlert({
+        type: "success",
+        message: "Attendee list refreshed successfully.",
+      });
+    } catch (error) {
+      setAlert({
+        type: "error",
+        message: error instanceof Error ? error.message : "Unable to refresh attendees.",
+      });
+    } finally {
+      setPendingAction(null);
+    }
   }
 
   async function handleStatusUpdate(documentId: string, attendanceStatus: AttendanceStatus) {
-    setMessage("");
+    const actionKey: PendingAction = `${documentId}:${attendanceStatus === "confirmed" ? "confirm" : "save"}`;
+    setPendingAction(actionKey);
+    setAlert(null);
 
-    const response = await fetch("/api/admin/attendees", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        documentId,
-        attendanceStatus,
-        notes: notesDrafts[documentId] ?? "",
-      }),
-    });
+    try {
+      const response = await fetch("/api/admin/attendees", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          documentId,
+          attendanceStatus,
+          notes: notesDrafts[documentId] ?? "",
+        }),
+      });
 
-    const result = (await response.json()) as {
-      ok: boolean;
-      attendee?: AttendeeRecord;
-      error?: string;
-    };
+      const result = (await response.json()) as {
+        ok: boolean;
+        attendee?: AttendeeRecord;
+        error?: string;
+      };
 
-    if (!response.ok || !result.ok || !result.attendee) {
-      throw new Error(result.error ?? "Unable to update attendee.");
+      if (!response.ok || !result.ok || !result.attendee) {
+        throw new Error(result.error ?? "Unable to update attendee.");
+      }
+
+      const updatedAttendee = result.attendee;
+      const name = attendeeName(updatedAttendee);
+
+      setAttendees((current) =>
+        current.map((attendee) => (attendee.documentId === documentId ? updatedAttendee : attendee)),
+      );
+      setNotesDrafts((current) => ({
+        ...current,
+        [documentId]: updatedAttendee.notes ?? "",
+      }));
+      setAlert({
+        type: "success",
+        message:
+          attendanceStatus === "confirmed"
+            ? `${name} has been checked in successfully.`
+            : `Notes saved for ${name}.`,
+      });
+    } catch (error) {
+      setAlert({
+        type: "error",
+        message: error instanceof Error ? error.message : "Unable to update attendee.",
+      });
+    } finally {
+      setPendingAction(null);
     }
-
-    const updatedAttendee = result.attendee;
-
-    setAttendees((current) =>
-      current.map((attendee) => (attendee.documentId === documentId ? updatedAttendee : attendee)),
-    );
-    setNotesDrafts((current) => ({
-      ...current,
-      [documentId]: updatedAttendee.notes ?? "",
-    }));
-    setMessage(`${updatedAttendee.firstName} ${updatedAttendee.lastName} updated.`);
   }
 
   async function handleScanConfirm() {
-    setMessage("");
-
-    const response = await fetch("/api/admin/attendees/scan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        registrationReference: scanValue,
-        notes: scanNotes,
-      }),
+    setPendingAction("scan");
+    setAlert({
+      type: "info",
+      message: "Looking up attendee and confirming check-in...",
     });
 
-    const result = (await response.json()) as {
-      ok: boolean;
-      attendee?: AttendeeRecord;
-      error?: string;
-    };
+    try {
+      const response = await fetch("/api/admin/attendees/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          registrationReference: scanValue,
+          notes: scanNotes,
+        }),
+      });
 
-    if (!response.ok || !result.ok || !result.attendee) {
-      throw new Error(result.error ?? "Unable to confirm attendee.");
-    }
+      const result = (await response.json()) as {
+        ok: boolean;
+        attendee?: AttendeeRecord;
+        error?: string;
+      };
 
-    const confirmedAttendee = result.attendee;
-
-    setAttendees((current) => {
-      const existing = current.find((attendee) => attendee.documentId === confirmedAttendee.documentId);
-
-      if (!existing) {
-        return [confirmedAttendee, ...current];
+      if (!response.ok || !result.ok || !result.attendee) {
+        throw new Error(result.error ?? "Unable to confirm attendee.");
       }
 
-      return current.map((attendee) =>
-        attendee.documentId === confirmedAttendee.documentId ? confirmedAttendee : attendee,
+      const confirmedAttendee = result.attendee;
+      const name = attendeeName(confirmedAttendee);
+
+      setAttendees((current) =>
+        current.map((attendee) =>
+          attendee.documentId === confirmedAttendee.documentId ? confirmedAttendee : attendee,
+        ),
       );
-    });
-    setNotesDrafts((current) => ({
-      ...current,
-      [confirmedAttendee.documentId]: confirmedAttendee.notes ?? "",
-    }));
-    setMessage(`${confirmedAttendee.firstName} ${confirmedAttendee.lastName} confirmed at check-in.`);
-    setScanValue("");
-    setScanNotes("");
+      setNotesDrafts((current) => ({
+        ...current,
+        [confirmedAttendee.documentId]: confirmedAttendee.notes ?? "",
+      }));
+      setAlert({
+        type: "success",
+        message: `${name} was confirmed successfully.`,
+      });
+      setScanValue("");
+      setScanNotes("");
+      await fetchAttendees(pagination.page, search, false);
+    } catch (error) {
+      setAlert({
+        type: "error",
+        message: error instanceof Error ? error.message : "Unable to confirm attendee.",
+      });
+    } finally {
+      setPendingAction(null);
+    }
   }
 
-  const filteredAttendees = attendees.filter((attendee) => {
-    const haystack = [
-      attendee.firstName,
-      attendee.lastName,
-      attendee.email,
-      attendee.registrationReference,
-      attendee.company ?? "",
-      attendee.notes ?? "",
-    ]
-      .join(" ")
-      .toLowerCase();
-
-    return haystack.includes(search.trim().toLowerCase());
-  });
+  const hasPreviousPage = pagination.page > 1;
+  const hasNextPage = pagination.page < pagination.pageCount;
+  const isRefreshing = pendingAction === "refresh";
+  const isScanning = pendingAction === "scan";
+  const isSigningIn = pendingAction === "login";
 
   if (!isAuthenticated) {
     return (
@@ -176,19 +320,25 @@ export function AdminAttendeesClient({
               onSubmit={async (event) => {
                 event.preventDefault();
                 setLoginError("");
+                setPendingAction("login");
+                try {
+                  const result = await signIn("strapi-admin", {
+                    identifier,
+                    password,
+                    redirect: false,
+                  });
 
-                const result = await signIn("strapi-admin", {
-                  identifier,
-                  password,
-                  redirect: false,
-                });
+                  if (result?.error) {
+                    setLoginError("Login failed. Check your Strapi admin email and password.");
+                    return;
+                  }
 
-                if (result?.error) {
-                  setLoginError("Login failed. Check your Strapi credentials and permissions.");
-                  return;
+                  window.location.reload();
+                } catch {
+                  setLoginError("Login failed. Check your Strapi admin email and password.");
+                } finally {
+                  setPendingAction(null);
                 }
-
-                window.location.reload();
               }}
             >
               <label>
@@ -199,7 +349,7 @@ export function AdminAttendeesClient({
                   autoComplete="username"
                   value={identifier}
                   onChange={(event) => setIdentifier(event.target.value)}
-                  placeholder="admin"
+                  placeholder="admin@example.com"
                 />
               </label>
               <label>
@@ -215,11 +365,13 @@ export function AdminAttendeesClient({
               </label>
               {loginError ? (
                 <div className="admin-inline-message is-error" role="alert">
-                  {loginError}
+                  <AlertCircle />
+                  <span>{loginError}</span>
                 </div>
               ) : null}
-              <button className="btn btn-accent lg block" type="submit">
-                <ShieldCheck /> Sign in
+              <button className="btn btn-accent lg block" type="submit" disabled={isSigningIn}>
+                {isSigningIn ? <LoaderCircle className="spin" /> : <ShieldCheck />}
+                {isSigningIn ? "Signing in..." : "Sign in"}
               </button>
             </form>
           </section>
@@ -239,22 +391,9 @@ export function AdminAttendeesClient({
           <p>{adminName ? `Signed in as ${adminName}.` : "Manage attendee confirmations and notes."}</p>
         </div>
         <div className="admin-attendees-actions">
-          <button
-            className="btn btn-secondary"
-            type="button"
-            disabled={isPending}
-            onClick={() =>
-              startTransition(async () => {
-                try {
-                  await refreshAttendees();
-                  setMessage("Attendee list refreshed.");
-                } catch (error) {
-                  setMessage(error instanceof Error ? error.message : "Unable to refresh attendees.");
-                }
-              })
-            }
-          >
-            <RefreshCw /> Refresh
+          <button className="btn btn-secondary" type="button" disabled={isRefreshing} onClick={() => void refreshAttendees()}>
+            {isRefreshing ? <LoaderCircle className="spin" /> : <RefreshCw />}
+            {isRefreshing ? "Refreshing..." : "Refresh"}
           </button>
           <button className="btn btn-light" type="button" onClick={() => signOut({ callbackUrl: "/admin" })}>
             <LogOut /> Sign out
@@ -279,13 +418,7 @@ export function AdminAttendeesClient({
             className="admin-scan-form"
             onSubmit={(event) => {
               event.preventDefault();
-              startTransition(async () => {
-                try {
-                  await handleScanConfirm();
-                } catch (error) {
-                  setMessage(error instanceof Error ? error.message : "Unable to confirm attendee.");
-                }
-              });
+              void handleScanConfirm();
             }}
           >
             <label>
@@ -305,29 +438,75 @@ export function AdminAttendeesClient({
                 placeholder="VIP guest, arrived with team, etc."
               />
             </label>
-            <button className="btn btn-accent" type="submit" disabled={isPending}>
-              <CheckCircle2 /> Confirm attendee
+            <button className="btn btn-accent" type="submit" disabled={isScanning}>
+              {isScanning ? <LoaderCircle className="spin" /> : <CheckCircle2 />}
+              {isScanning ? "Confirming..." : "Confirm attendee"}
             </button>
           </form>
-          {message ? (
-            <div className="admin-inline-message" role="status">
-              {message}
+          {alert ? (
+            <div className={`admin-inline-message is-${alert.type}`} role={alert.type === "error" ? "alert" : "status"}>
+              {alert.type === "error" ? <AlertCircle /> : alert.type === "success" ? <CheckCircle2 /> : <LoaderCircle className="spin" />}
+              <span>{alert.message}</span>
             </div>
           ) : null}
         </section>
 
         <section className="admin-table-card">
-          <div className="admin-card-head">
+          <div className="admin-card-head admin-table-toolbar">
             <div>
               <div className="eyebrow">Attendees</div>
-              <h2>{filteredAttendees.length} records</h2>
+              <h2>{pagination.total} records</h2>
             </div>
-            <input
-              className="admin-search-input"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by name, email, reference, company"
-            />
+            <label className="admin-search-field">
+              <Search />
+              <input
+                className="admin-search-input"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Search by name, email, reference, company"
+              />
+            </label>
+          </div>
+
+          <div className="admin-pagination">
+            <div className="admin-pagination-meta">
+              {isTableLoading ? (
+                <span>Loading attendees...</span>
+              ) : (
+                <span>
+                  Page {pagination.page} of {pagination.pageCount}
+                  {pagination.total > 0 ? ` • ${pagination.total} total attendees` : ""}
+                </span>
+              )}
+            </div>
+            <div className="admin-pagination-actions">
+              <button
+                className="btn btn-light sm"
+                type="button"
+                disabled={!hasPreviousPage || isTableLoading}
+                onClick={() =>
+                  setPagination((current) => ({
+                    ...current,
+                    page: Math.max(1, current.page - 1),
+                  }))
+                }
+              >
+                Previous
+              </button>
+              <button
+                className="btn btn-light sm"
+                type="button"
+                disabled={!hasNextPage || isTableLoading}
+                onClick={() =>
+                  setPagination((current) => ({
+                    ...current,
+                    page: Math.min(current.pageCount, current.page + 1),
+                  }))
+                }
+              >
+                Next
+              </button>
+            </div>
           </div>
 
           <div className="admin-table-wrap">
@@ -342,74 +521,79 @@ export function AdminAttendeesClient({
                 </tr>
               </thead>
               <tbody>
-                {filteredAttendees.map((attendee) => (
-                  <tr key={attendee.documentId}>
-                    <td>
-                      <strong>{`${attendee.firstName} ${attendee.lastName}`}</strong>
-                      <span>{attendee.email}</span>
-                      <span>{attendee.company || attendee.phone}</span>
-                    </td>
-                    <td>{attendee.registrationReference}</td>
-                    <td>
-                      <span className={`admin-status-pill is-${attendee.attendanceStatus}`}>
-                        {statusLabel(attendee.attendanceStatus)}
-                      </span>
-                      {attendee.checkedInAt ? <small>{new Date(attendee.checkedInAt).toLocaleString()}</small> : null}
-                    </td>
-                    <td>
-                      <input
-                        value={notesDrafts[attendee.documentId] ?? ""}
-                        onChange={(event) =>
-                          setNotesDrafts((current) => ({
-                            ...current,
-                            [attendee.documentId]: event.target.value,
-                          }))
-                        }
-                        placeholder="Add notes"
-                      />
-                    </td>
-                    <td>
-                      <div className="admin-row-actions">
-                        <button
-                          className="btn btn-light sm"
-                          type="button"
-                          disabled={isPending}
-                          onClick={() =>
-                            startTransition(async () => {
-                              try {
-                                await handleStatusUpdate(attendee.documentId, attendee.attendanceStatus);
-                              } catch (error) {
-                                setMessage(error instanceof Error ? error.message : "Unable to update attendee.");
-                              }
-                            })
+                {attendees.map((attendee) => {
+                  const saveActionKey: PendingAction = `${attendee.documentId}:save`;
+                  const confirmActionKey: PendingAction = `${attendee.documentId}:confirm`;
+                  const isSaving = pendingAction === saveActionKey;
+                  const isConfirming = pendingAction === confirmActionKey;
+
+                  return (
+                    <tr key={attendee.documentId}>
+                      <td>
+                        <strong>{attendeeName(attendee)}</strong>
+                        <span>{attendee.email}</span>
+                        <span>{attendee.company || attendee.phone}</span>
+                      </td>
+                      <td>{attendee.registrationReference}</td>
+                      <td>
+                        <span className={`admin-status-pill is-${attendee.attendanceStatus}`}>
+                          {statusLabel(attendee.attendanceStatus)}
+                        </span>
+                        {attendee.checkedInAt ? <small>{new Date(attendee.checkedInAt).toLocaleString()}</small> : null}
+                      </td>
+                      <td>
+                        <input
+                          value={notesDrafts[attendee.documentId] ?? ""}
+                          onChange={(event) =>
+                            setNotesDrafts((current) => ({
+                              ...current,
+                              [attendee.documentId]: event.target.value,
+                            }))
                           }
-                        >
-                          Save notes
-                        </button>
-                        <button
-                          className="btn btn-accent sm"
-                          type="button"
-                          disabled={isPending}
-                          onClick={() =>
-                            startTransition(async () => {
-                              try {
-                                await handleStatusUpdate(attendee.documentId, "confirmed");
-                              } catch (error) {
-                                setMessage(error instanceof Error ? error.message : "Unable to update attendee.");
-                              }
-                            })
-                          }
-                        >
-                          Confirm
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredAttendees.length === 0 ? (
+                          placeholder="Add notes"
+                        />
+                      </td>
+                      <td>
+                        <div className="admin-row-actions">
+                          <button
+                            className="btn btn-light sm"
+                            type="button"
+                            disabled={isSaving || isConfirming || isTableLoading}
+                            onClick={() => void handleStatusUpdate(attendee.documentId, attendee.attendanceStatus)}
+                          >
+                            {isSaving ? <LoaderCircle className="spin" /> : null}
+                            {isSaving ? "Saving..." : "Save notes"}
+                          </button>
+                          <button
+                            className="btn btn-accent sm"
+                            type="button"
+                            disabled={isSaving || isConfirming || isTableLoading}
+                            onClick={() => void handleStatusUpdate(attendee.documentId, "confirmed")}
+                          >
+                            {isConfirming ? <LoaderCircle className="spin" /> : <CheckCircle2 />}
+                            {isConfirming ? "Confirming..." : "Confirm"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!isTableLoading && attendees.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="admin-empty-cell">
-                      No attendees matched your search.
+                      {search
+                        ? "No attendees matched that search. Try a name, email, company, or reference."
+                        : "No attendees found yet."}
+                    </td>
+                  </tr>
+                ) : null}
+                {isTableLoading ? (
+                  <tr>
+                    <td colSpan={5} className="admin-empty-cell">
+                      <div className="admin-loading-state">
+                        <LoaderCircle className="spin" />
+                        <span>Loading attendees from Strapi...</span>
+                      </div>
                     </td>
                   </tr>
                 ) : null}
