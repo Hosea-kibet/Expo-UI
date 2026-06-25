@@ -78,6 +78,28 @@ export type ExpoAuthResult = {
   strapiRoleType?: string;
 };
 
+function normalizeExpoRoleName(roleName: string) {
+  return roleName
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, " ");
+}
+
+function resolveExpoAccess(roleName: string, roleType: string): ExpoAccessRole | null {
+  const normalizedName = normalizeExpoRoleName(roleName);
+  const normalizedType = normalizeExpoRoleName(roleType);
+
+  if (normalizedName === "event admin" || normalizedType === "event admin") {
+    return "admin";
+  }
+
+  if (normalizedName === "check in staff" || normalizedType === "check in staff") {
+    return "staff";
+  }
+
+  return null;
+}
+
 function getStrapiAdminBaseUrl() {
   const strapiUrl = process.env.STRAPI_URL;
 
@@ -230,27 +252,14 @@ export async function loginExpoUser(identifier: string, password: string): Promi
 
   const roleName = me.role?.name?.trim() ?? "";
   const roleType = me.role?.type?.trim() ?? "";
-  const normalizedRoleName = roleName.toLowerCase();
+  const expoAccess = resolveExpoAccess(roleName, roleType);
 
-  if (normalizedRoleName === "event admin") {
+  if (expoAccess) {
     return {
       id: `staff-${me.id}`,
       email: me.email,
       name: me.username,
-      expoAccess: "admin",
-      authProvider: "strapi-staff",
-      strapiJwt: result.jwt,
-      strapiRoleName: roleName,
-      strapiRoleType: roleType,
-    };
-  }
-
-  if (normalizedRoleName === "check in staff") {
-    return {
-      id: `staff-${me.id}`,
-      email: me.email,
-      name: me.username,
-      expoAccess: "staff",
+      expoAccess,
       authProvider: "strapi-staff",
       strapiJwt: result.jwt,
       strapiRoleName: roleName,
