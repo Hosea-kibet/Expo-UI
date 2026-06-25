@@ -333,7 +333,7 @@ export function AdminAttendeesClient({
                     return;
                   }
 
-                  window.location.reload();
+                  window.location.href = "/admin";
                 } catch {
                   setLoginError("Login failed. Check your Strapi admin email and password.");
                 } finally {
@@ -395,7 +395,7 @@ export function AdminAttendeesClient({
             {isRefreshing ? <LoaderCircle className="spin" /> : <RefreshCw />}
             {isRefreshing ? "Refreshing..." : "Refresh"}
           </button>
-          <button className="btn btn-light" type="button" onClick={() => signOut({ callbackUrl: "/admin" })}>
+          <button className="btn btn-light" type="button" onClick={() => signOut({ callbackUrl: "/admin/login" })}>
             <LogOut /> Sign out
           </button>
         </div>
