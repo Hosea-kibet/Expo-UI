@@ -6461,6 +6461,97 @@ header.nav.scrolled .logo-mark-icon {
   }
 }
 
+@media (max-width: 720px) {
+  .admin-auth-shell,
+  .admin-attendees-shell,
+  .admin-attendees-header {
+    width: min(100%, calc(100% - 1rem));
+  }
+
+  .admin-auth-shell {
+    padding: 1.5rem 0;
+  }
+
+  .admin-auth-card,
+  .admin-scan-card,
+  .admin-table-card {
+    padding: 1rem;
+    border-radius: 22px;
+  }
+
+  .admin-attendees-header {
+    padding: 1.5rem 0 1rem;
+  }
+
+  .admin-attendees-actions,
+  .admin-attendees-actions .btn,
+  .admin-pagination-actions,
+  .admin-pagination-actions .btn,
+  .admin-row-actions,
+  .admin-row-actions .btn {
+    width: 100%;
+  }
+
+  .admin-row-actions,
+  .admin-pagination-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-table-wrap {
+    overflow: visible;
+  }
+
+  .admin-attendees-table,
+  .admin-attendees-table thead,
+  .admin-attendees-table tbody,
+  .admin-attendees-table tr,
+  .admin-attendees-table th,
+  .admin-attendees-table td {
+    display: block;
+  }
+
+  .admin-attendees-table thead {
+    display: none;
+  }
+
+  .admin-attendees-table tbody {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .admin-attendees-table tr {
+    border: 1px solid rgba(65, 82, 39, 0.1);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.78);
+    overflow: hidden;
+  }
+
+  .admin-attendees-table td {
+    border-top: 1px solid rgba(65, 82, 39, 0.08);
+    padding: 0.85rem 1rem;
+  }
+
+  .admin-attendees-table td:first-child {
+    border-top: 0;
+  }
+
+  .admin-attendees-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: rgba(29, 36, 22, 0.56);
+  }
+
+  .admin-empty-cell {
+    padding: 1.25rem 1rem;
+  }
+}
+
 @keyframes admin-spin {
   from {
     transform: rotate(0deg);

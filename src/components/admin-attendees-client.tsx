@@ -529,19 +529,19 @@ export function AdminAttendeesClient({
 
                   return (
                     <tr key={attendee.documentId}>
-                      <td>
+                      <td data-label="Attendee">
                         <strong>{attendeeName(attendee)}</strong>
                         <span>{attendee.email}</span>
                         <span>{attendee.company || attendee.phone}</span>
                       </td>
-                      <td>{attendee.registrationReference}</td>
-                      <td>
+                      <td data-label="Reference">{attendee.registrationReference}</td>
+                      <td data-label="Status">
                         <span className={`admin-status-pill is-${attendee.attendanceStatus}`}>
                           {statusLabel(attendee.attendanceStatus)}
                         </span>
                         {attendee.checkedInAt ? <small>{new Date(attendee.checkedInAt).toLocaleString()}</small> : null}
                       </td>
-                      <td>
+                      <td data-label="Notes">
                         <input
                           value={notesDrafts[attendee.documentId] ?? ""}
                           onChange={(event) =>
@@ -553,7 +553,7 @@ export function AdminAttendeesClient({
                           placeholder="Add notes"
                         />
                       </td>
-                      <td>
+                      <td data-label="Action">
                         <div className="admin-row-actions">
                           <button
                             className="btn btn-light sm"
