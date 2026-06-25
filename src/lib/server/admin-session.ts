@@ -23,7 +23,6 @@ export async function getAdminTokenFromRequest(request: NextRequest) {
   }
 
   return {
-    strapiJwt: String(token.strapiJwt ?? ""),
     adminId: String(token.adminId ?? ""),
     expoAccess: token.expoAccess === "admin" ? "admin" : "staff",
     authProvider: token.authProvider,

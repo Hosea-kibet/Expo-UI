@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   listAttendees,
   updateAttendee,
-  updateAttendeeWithJwt,
 } from "@/src/lib/server/strapi-admin";
 import { getAdminTokenFromRequest } from "@/src/lib/server/admin-session";
 
@@ -18,7 +17,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const attendees = await listAttendees(admin.expoAccess === "admin" ? undefined : admin.strapiJwt);
+    const attendees = await listAttendees();
     return NextResponse.json({ ok: true, attendees });
   } catch (error) {
     return NextResponse.json(
@@ -69,10 +68,7 @@ export async function PATCH(request: NextRequest) {
           : {}),
     };
 
-    const attendee =
-      admin.expoAccess === "admin"
-        ? await updateAttendee(documentId, payload)
-        : await updateAttendeeWithJwt(documentId, payload, admin.strapiJwt);
+    const attendee = await updateAttendee(documentId, payload);
 
     return NextResponse.json({ ok: true, attendee });
   } catch (error) {

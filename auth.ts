@@ -63,7 +63,6 @@ export const authOptions: NextAuthOptions = {
             name: result.name,
             role: result.expoAccess,
             authProvider: result.authProvider,
-            strapiJwt: result.strapiJwt,
             strapiRoleName: result.strapiRoleName,
             strapiRoleType: result.strapiRoleType,
           };
@@ -79,12 +78,11 @@ export const authOptions: NextAuthOptions = {
         token.authProvider =
           user.role === "attendee"
             ? "attendee-otp"
-            : ((user as { authProvider?: "strapi-admin" | "strapi-staff" }).authProvider ?? "strapi-staff");
+            : ((user as { authProvider?: "strapi-admin" }).authProvider ?? "strapi-admin");
 
         if (user.role === "admin" || user.role === "staff") {
           token.adminId = user.id;
           token.adminName = user.name;
-          token.strapiJwt = (user as { strapiJwt?: string }).strapiJwt;
           token.expoAccess = user.role;
           token.strapiRoleName = (user as { strapiRoleName?: string }).strapiRoleName;
           token.strapiRoleType = (user as { strapiRoleType?: string }).strapiRoleType;
@@ -95,7 +93,6 @@ export const authOptions: NextAuthOptions = {
           token.registrationReference = (user as { registrationReference?: string }).registrationReference;
           delete token.adminId;
           delete token.adminName;
-          delete token.strapiJwt;
           delete token.expoAccess;
           delete token.strapiRoleName;
           delete token.strapiRoleType;
@@ -112,7 +109,7 @@ export const authOptions: NextAuthOptions = {
           token.authProvider === "attendee-otp"
             ? "attendee"
             : (String(token.expoAccess ?? "staff") as "admin" | "staff" | "attendee");
-        session.user.strapiJwt = token.authProvider === "attendee-otp" ? "" : String(token.strapiJwt ?? "");
+        session.user.strapiJwt = "";
         session.user.strapiRoleName =
           token.authProvider === "attendee-otp" ? "" : String(token.strapiRoleName ?? "");
         session.user.strapiRoleType =

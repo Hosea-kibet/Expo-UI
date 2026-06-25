@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getAttendeeByReference,
   updateAttendee,
-  updateAttendeeWithJwt,
 } from "@/src/lib/server/strapi-admin";
 import { getAdminTokenFromRequest } from "@/src/lib/server/admin-session";
 
@@ -34,10 +33,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const attendee = await getAttendeeByReference(
-      registrationReference,
-      admin.expoAccess === "admin" ? undefined : admin.strapiJwt,
-    );
+    const attendee = await getAttendeeByReference(registrationReference);
 
     if (!attendee) {
       return NextResponse.json(
@@ -52,10 +48,7 @@ export async function POST(request: NextRequest) {
       ...(body.notes !== undefined ? { notes: String(body.notes).trim() || null } : {}),
     };
 
-    const confirmedAttendee =
-      admin.expoAccess === "admin"
-        ? await updateAttendee(attendee.documentId, payload)
-        : await updateAttendeeWithJwt(attendee.documentId, payload, admin.strapiJwt);
+    const confirmedAttendee = await updateAttendee(attendee.documentId, payload);
 
     return NextResponse.json({ ok: true, attendee: confirmedAttendee });
   } catch (error) {

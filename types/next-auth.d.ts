@@ -15,8 +15,7 @@ declare module "next-auth" {
   interface User {
     registrationReference?: string;
     role?: "attendee" | "staff" | "admin";
-    authProvider?: "strapi-admin" | "strapi-staff";
-    strapiJwt?: string;
+    authProvider?: "strapi-admin";
     strapiRoleName?: string;
     strapiRoleType?: string;
   }
@@ -24,12 +23,11 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT {
-    authProvider?: "attendee-otp" | "strapi-admin" | "strapi-staff";
+    authProvider?: "attendee-otp" | "strapi-admin";
     attendeeId?: string;
     registrationReference?: string;
     adminId?: string;
     adminName?: string | null;
-    strapiJwt?: string;
     expoAccess?: "staff" | "admin";
     strapiRoleName?: string;
     strapiRoleType?: string;

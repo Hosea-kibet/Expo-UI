@@ -32,26 +32,6 @@ export type AttendeeRecord = {
 
 type StrapiSingleResponse<T> = { data: T | null };
 type StrapiCollectionResponse<T> = { data: T[] };
-type StrapiMeResponse = {
-  id: number;
-  username: string;
-  email: string;
-  blocked?: boolean;
-  role?: {
-    id: number;
-    name: string;
-    type: string;
-  } | null;
-};
-type StrapiLocalAuthResponse = {
-  jwt: string;
-  user: {
-    id: number;
-    username: string;
-    email: string;
-    blocked?: boolean;
-  };
-};
 type StrapiAdminLoginResponse = {
   data?: {
     token?: string;
@@ -62,6 +42,11 @@ type StrapiAdminLoginResponse = {
       lastname?: string | null;
       email: string;
       isActive?: boolean;
+      roles?: Array<{
+        id: number;
+        name: string;
+        code: string;
+      }>;
     };
   };
 };
@@ -72,8 +57,7 @@ export type ExpoAuthResult = {
   email: string;
   name: string;
   expoAccess: ExpoAccessRole;
-  authProvider: "strapi-admin" | "strapi-staff";
-  strapiJwt?: string;
+  authProvider: "strapi-admin";
   strapiRoleName?: string;
   strapiRoleType?: string;
 };
@@ -85,19 +69,35 @@ function normalizeExpoRoleName(roleName: string) {
     .replace(/[\s_-]+/g, " ");
 }
 
-function resolveExpoAccess(roleName: string, roleType: string): ExpoAccessRole | null {
-  const normalizedName = normalizeExpoRoleName(roleName);
-  const normalizedType = normalizeExpoRoleName(roleType);
+function resolveExpoAccessFromAdminRoles(
+  roles: Array<{ name?: string | null; code?: string | null }> = [],
+): { expoAccess: ExpoAccessRole; roleName: string; roleCode: string } {
+  const normalizedRoles = roles.map((role) => ({
+    name: role.name?.trim() ?? "",
+    code: role.code?.trim() ?? "",
+    normalizedName: normalizeExpoRoleName(role.name ?? ""),
+    normalizedCode: normalizeExpoRoleName(role.code ?? ""),
+  }));
 
-  if (normalizedName === "event admin" || normalizedType === "event admin") {
-    return "admin";
+  const superAdminRole = normalizedRoles.find(
+    (role) => role.normalizedCode === "strapi super admin" || role.normalizedName === "super admin",
+  );
+
+  if (superAdminRole) {
+    return {
+      expoAccess: "admin",
+      roleName: superAdminRole.name,
+      roleCode: superAdminRole.code,
+    };
   }
 
-  if (normalizedName === "check in staff" || normalizedType === "check in staff") {
-    return "staff";
-  }
+  const firstRole = normalizedRoles[0];
 
-  return null;
+  return {
+    expoAccess: "staff",
+    roleName: firstRole?.name ?? "",
+    roleCode: firstRole?.code ?? "",
+  };
 }
 
 function getStrapiAdminBaseUrl() {
@@ -197,81 +197,35 @@ async function strapiJwtRequest<T>(path: string, jwt: string, init?: RequestInit
   });
 }
 
-export async function loginStrapiUser(identifier: string, password: string) {
-  const result = await strapiRequest<StrapiLocalAuthResponse>("/auth/local", {
+export async function loginExpoUser(identifier: string, password: string): Promise<ExpoAuthResult> {
+  const normalizedIdentifier = identifier.trim().toLowerCase();
+  const adminResult = await strapiAdminRequest<StrapiAdminLoginResponse>("/admin/login", {
     method: "POST",
     body: JSON.stringify({
-      identifier,
+      email: normalizedIdentifier,
       password,
     }),
   });
 
-  if (!result.jwt || !result.user) {
-    throw new Error("Strapi did not return an authenticated user.");
+  const accessToken = adminResult.data?.accessToken ?? adminResult.data?.token;
+  const adminUser = adminResult.data?.user;
+
+  if (!accessToken || !adminUser?.email) {
+    throw new Error("Strapi admin login did not return a valid admin user.");
   }
 
-  return result;
-}
+  const fullName = [adminUser.firstname, adminUser.lastname].filter(Boolean).join(" ").trim();
+  const { expoAccess, roleName, roleCode } = resolveExpoAccessFromAdminRoles(adminUser.roles ?? []);
 
-export async function loginExpoUser(identifier: string, password: string): Promise<ExpoAuthResult> {
-  const normalizedIdentifier = identifier.trim();
-
-  try {
-    const adminResult = await strapiAdminRequest<StrapiAdminLoginResponse>("/admin/login", {
-      method: "POST",
-      body: JSON.stringify({
-        email: normalizedIdentifier,
-        password,
-      }),
-    });
-
-    const accessToken = adminResult.data?.accessToken ?? adminResult.data?.token;
-    const adminUser = adminResult.data?.user;
-
-    if (accessToken && adminUser?.email) {
-      const fullName = [adminUser.firstname, adminUser.lastname].filter(Boolean).join(" ").trim();
-
-      return {
-        id: `admin-${adminUser.id}`,
-        email: adminUser.email,
-        name: fullName || adminUser.email,
-        expoAccess: "admin",
-        authProvider: "strapi-admin",
-      };
-    }
-  } catch {
-    // Fall through to users-permissions login
-  }
-
-  const result = await loginStrapiUser(normalizedIdentifier, password);
-  const me = await strapiJwtRequest<StrapiMeResponse>("/users/me?populate=role", result.jwt);
-
-  if (me.blocked) {
-    throw new Error("Your account has been blocked by an administrator.");
-  }
-
-  const roleName = me.role?.name?.trim() ?? "";
-  const roleType = me.role?.type?.trim() ?? "";
-  const expoAccess = resolveExpoAccess(roleName, roleType);
-
-  if (expoAccess) {
-    return {
-      id: `staff-${me.id}`,
-      email: me.email,
-      name: me.username,
-      expoAccess,
-      authProvider: "strapi-staff",
-      strapiJwt: result.jwt,
-      strapiRoleName: roleName,
-      strapiRoleType: roleType,
-    };
-  }
-
-  throw new Error(
-    roleName
-      ? `The Strapi role "${roleName}" is not allowed to access Expo admin.`
-      : "Your Strapi account does not have an Expo staff role."
-  );
+  return {
+    id: `admin-${adminUser.id}`,
+    email: adminUser.email,
+    name: fullName || adminUser.email,
+    expoAccess,
+    authProvider: "strapi-admin",
+    strapiRoleName: roleName,
+    strapiRoleType: roleCode,
+  };
 }
 
 export async function getAttendeeByEmail(email: string) {
