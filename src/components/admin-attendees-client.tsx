@@ -105,13 +105,13 @@ export function AdminAttendeesClient({
       return;
     }
 
-    void fetchAttendees(pagination.page, search, true).catch((error) => {
+    void fetchAttendees(1, search, true).catch((error) => {
       setAlert({
         type: "error",
         message: error instanceof Error ? error.message : "Unable to load attendees.",
       });
     });
-  }, [isAuthenticated, pagination.page, search]);
+  }, [isAuthenticated, search]);
 
   async function fetchAttendees(page: number, query: string, showLoader = true) {
     const requestId = requestSequenceRef.current + 1;
@@ -172,7 +172,7 @@ export function AdminAttendeesClient({
     setPendingAction("refresh");
 
     try {
-      await fetchAttendees(pagination.page, search, true);
+      await fetchAttendees(1, search, true);
       setAlert({
         type: "success",
         message: "Attendee list refreshed successfully.",
@@ -285,7 +285,7 @@ export function AdminAttendeesClient({
       });
       setScanValue("");
       setScanNotes("");
-      await fetchAttendees(pagination.page, search, false);
+      await fetchAttendees(1, search, false);
     } catch (error) {
       setAlert({
         type: "error",
@@ -296,8 +296,6 @@ export function AdminAttendeesClient({
     }
   }
 
-  const hasPreviousPage = pagination.page > 1;
-  const hasNextPage = pagination.page < pagination.pageCount;
   const isRefreshing = pendingAction === "refresh";
   const isScanning = pendingAction === "scan";
   const isSigningIn = pendingAction === "login";
@@ -467,48 +465,6 @@ export function AdminAttendeesClient({
               />
             </label>
           </div>
-
-          <div className="admin-pagination">
-            <div className="admin-pagination-meta">
-              {isTableLoading ? (
-                <span>Loading attendees...</span>
-              ) : (
-                <span>
-                  Page {pagination.page} of {pagination.pageCount}
-                  {pagination.total > 0 ? ` • ${pagination.total} total attendees` : ""}
-                </span>
-              )}
-            </div>
-            <div className="admin-pagination-actions">
-              <button
-                className="btn btn-light sm"
-                type="button"
-                disabled={!hasPreviousPage || isTableLoading}
-                onClick={() =>
-                  setPagination((current) => ({
-                    ...current,
-                    page: Math.max(1, current.page - 1),
-                  }))
-                }
-              >
-                Previous
-              </button>
-              <button
-                className="btn btn-light sm"
-                type="button"
-                disabled={!hasNextPage || isTableLoading}
-                onClick={() =>
-                  setPagination((current) => ({
-                    ...current,
-                    page: Math.min(current.pageCount, current.page + 1),
-                  }))
-                }
-              >
-                Next
-              </button>
-            </div>
-          </div>
-
           <div className="admin-table-wrap">
             <table className="admin-attendees-table">
               <thead>

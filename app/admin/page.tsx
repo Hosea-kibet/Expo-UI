@@ -14,7 +14,7 @@ export default async function AdminPage() {
   let attendees: AttendeeRecord[] = [];
   let pagination: AttendeeListResult["pagination"] = {
     page: 1,
-    pageSize: 25,
+    pageSize: 10,
     pageCount: 1,
     total: 0,
   };
@@ -25,7 +25,7 @@ export default async function AdminPage() {
     try {
       const result = await listAttendees(session.user.strapiJwt, {
         page: 1,
-        pageSize: 25,
+        pageSize: 10,
         search: "",
       });
       attendees = result.attendees;

@@ -6351,26 +6351,9 @@ header.nav.scrolled .logo-mark-icon {
   gap: 1rem;
 }
 
-.admin-pagination,
-.admin-pagination-actions,
 .admin-loading-state {
   display: flex;
   align-items: center;
-}
-
-.admin-pagination {
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.admin-pagination-actions {
-  gap: 0.75rem;
-}
-
-.admin-pagination-meta {
-  color: rgba(29, 36, 22, 0.72);
-  font-size: 0.95rem;
 }
 
 .admin-loading-state {
@@ -6450,14 +6433,8 @@ header.nav.scrolled .logo-mark-icon {
     max-width: none;
   }
 
-  .admin-search-field,
-  .admin-pagination {
+  .admin-search-field {
     width: 100%;
-  }
-
-  .admin-pagination {
-    align-items: stretch;
-    flex-direction: column;
   }
 }
 
