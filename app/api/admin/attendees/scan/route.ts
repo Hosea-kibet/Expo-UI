@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   getAttendeeByReference,
+  updateAttendee,
   updateAttendeeWithJwt,
 } from "@/src/lib/server/strapi-admin";
 import { getAdminTokenFromRequest } from "@/src/lib/server/admin-session";
@@ -33,7 +34,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const attendee = await getAttendeeByReference(registrationReference, admin.strapiJwt);
+    const attendee = await getAttendeeByReference(
+      registrationReference,
+      admin.expoAccess === "admin" ? undefined : admin.strapiJwt,
+    );
 
     if (!attendee) {
       return NextResponse.json(
@@ -42,15 +46,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const confirmedAttendee = await updateAttendeeWithJwt(
-      attendee.documentId,
-      {
-        attendanceStatus: "confirmed",
-        checkedInAt: attendee.checkedInAt ?? new Date().toISOString(),
-        ...(body.notes !== undefined ? { notes: String(body.notes).trim() || null } : {}),
-      },
-      admin.strapiJwt,
-    );
+    const payload = {
+      attendanceStatus: "confirmed" as const,
+      checkedInAt: attendee.checkedInAt ?? new Date().toISOString(),
+      ...(body.notes !== undefined ? { notes: String(body.notes).trim() || null } : {}),
+    };
+
+    const confirmedAttendee =
+      admin.expoAccess === "admin"
+        ? await updateAttendee(attendee.documentId, payload)
+        : await updateAttendeeWithJwt(attendee.documentId, payload, admin.strapiJwt);
 
     return NextResponse.json({ ok: true, attendee: confirmedAttendee });
   } catch (error) {

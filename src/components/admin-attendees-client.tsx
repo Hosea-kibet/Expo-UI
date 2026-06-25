@@ -169,7 +169,7 @@ export function AdminAttendeesClient({
             </Link>
             <div className="eyebrow">Admin Access</div>
             <h1>Attendee check-in</h1>
-            <p>Sign in with your  username or email and password to manage attendee confirmations.</p>
+            <p>Sign in with your admin email or staff username/email and password to manage attendee confirmations.</p>
 
             <form
               className="admin-auth-form"
@@ -192,7 +192,7 @@ export function AdminAttendeesClient({
               }}
             >
               <label>
-                Username or email
+                Admin email or staff username/email
                 <input
                   type="text"
                   required

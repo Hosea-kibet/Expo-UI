@@ -32,6 +32,17 @@ export type AttendeeRecord = {
 
 type StrapiSingleResponse<T> = { data: T | null };
 type StrapiCollectionResponse<T> = { data: T[] };
+type StrapiMeResponse = {
+  id: number;
+  username: string;
+  email: string;
+  blocked?: boolean;
+  role?: {
+    id: number;
+    name: string;
+    type: string;
+  } | null;
+};
 type StrapiLocalAuthResponse = {
   jwt: string;
   user: {
@@ -40,6 +51,31 @@ type StrapiLocalAuthResponse = {
     email: string;
     blocked?: boolean;
   };
+};
+type StrapiAdminLoginResponse = {
+  data?: {
+    token?: string;
+    accessToken?: string;
+    user?: {
+      id: number;
+      firstname?: string | null;
+      lastname?: string | null;
+      email: string;
+      isActive?: boolean;
+    };
+  };
+};
+
+export type ExpoAccessRole = "admin" | "staff";
+export type ExpoAuthResult = {
+  id: string;
+  email: string;
+  name: string;
+  expoAccess: ExpoAccessRole;
+  authProvider: "strapi-admin" | "strapi-staff";
+  strapiJwt?: string;
+  strapiRoleName?: string;
+  strapiRoleType?: string;
 };
 
 function getStrapiAdminBaseUrl() {
@@ -50,6 +86,16 @@ function getStrapiAdminBaseUrl() {
   }
 
   return `${strapiUrl.replace(/\/$/, "")}/api`;
+}
+
+function getStrapiBaseUrl() {
+  const strapiUrl = process.env.STRAPI_URL;
+
+  if (!strapiUrl) {
+    throw new Error("STRAPI_URL is not configured.");
+  }
+
+  return strapiUrl.replace(/\/$/, "");
 }
 
 function getStrapiAdminHeaders() {
@@ -90,6 +136,35 @@ async function strapiRequest<T>(path: string, init?: RequestInit) {
   return JSON.parse(text) as T;
 }
 
+async function strapiAdminRequest<T>(path: string, init?: RequestInit) {
+  const response = await fetch(`${getStrapiBaseUrl()}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
+    cache: "no-store",
+  });
+
+  const text = await response.text();
+
+  if (!response.ok) {
+    let message: string | undefined;
+    try {
+      const parsed = JSON.parse(text) as { error?: { message?: string }; data?: { error?: { message?: string } } };
+      message = parsed?.error?.message ?? parsed?.data?.error?.message;
+    } catch {
+      // not JSON
+    }
+
+    const err = new Error(message || text || `Strapi admin request failed with ${response.status}`);
+    (err as Error & { status?: number }).status = response.status;
+    throw err;
+  }
+
+  return JSON.parse(text) as T;
+}
+
 async function strapiJwtRequest<T>(path: string, jwt: string, init?: RequestInit) {
   return strapiRequest<T>(path, {
     ...init,
@@ -116,6 +191,80 @@ export async function loginStrapiUser(identifier: string, password: string) {
   return result;
 }
 
+export async function loginExpoUser(identifier: string, password: string): Promise<ExpoAuthResult> {
+  const normalizedIdentifier = identifier.trim();
+
+  try {
+    const adminResult = await strapiAdminRequest<StrapiAdminLoginResponse>("/admin/login", {
+      method: "POST",
+      body: JSON.stringify({
+        email: normalizedIdentifier,
+        password,
+      }),
+    });
+
+    const accessToken = adminResult.data?.accessToken ?? adminResult.data?.token;
+    const adminUser = adminResult.data?.user;
+
+    if (accessToken && adminUser?.email) {
+      const fullName = [adminUser.firstname, adminUser.lastname].filter(Boolean).join(" ").trim();
+
+      return {
+        id: `admin-${adminUser.id}`,
+        email: adminUser.email,
+        name: fullName || adminUser.email,
+        expoAccess: "admin",
+        authProvider: "strapi-admin",
+      };
+    }
+  } catch {
+    // Fall through to users-permissions login
+  }
+
+  const result = await loginStrapiUser(normalizedIdentifier, password);
+  const me = await strapiJwtRequest<StrapiMeResponse>("/users/me?populate=role", result.jwt);
+
+  if (me.blocked) {
+    throw new Error("Your account has been blocked by an administrator.");
+  }
+
+  const roleName = me.role?.name?.trim() ?? "";
+  const roleType = me.role?.type?.trim() ?? "";
+  const normalizedRoleName = roleName.toLowerCase();
+
+  if (normalizedRoleName === "event admin") {
+    return {
+      id: `staff-${me.id}`,
+      email: me.email,
+      name: me.username,
+      expoAccess: "admin",
+      authProvider: "strapi-staff",
+      strapiJwt: result.jwt,
+      strapiRoleName: roleName,
+      strapiRoleType: roleType,
+    };
+  }
+
+  if (normalizedRoleName === "check in staff") {
+    return {
+      id: `staff-${me.id}`,
+      email: me.email,
+      name: me.username,
+      expoAccess: "staff",
+      authProvider: "strapi-staff",
+      strapiJwt: result.jwt,
+      strapiRoleName: roleName,
+      strapiRoleType: roleType,
+    };
+  }
+
+  throw new Error(
+    roleName
+      ? `The Strapi role "${roleName}" is not allowed to access Expo admin.`
+      : "Your Strapi account does not have an Expo staff role."
+  );
+}
+
 export async function getAttendeeByEmail(email: string) {
   const params = new URLSearchParams({
     "filters[email][$eq]": email,
@@ -129,31 +278,31 @@ export async function getAttendeeByEmail(email: string) {
   return result.data[0] ?? null;
 }
 
-export async function getAttendeeByReference(reference: string, jwt: string) {
+export async function getAttendeeByReference(reference: string, jwt?: string) {
   const params = new URLSearchParams({
     "filters[registrationReference][$eq]": reference,
     "pagination[pageSize]": "1",
     sort: "registeredAt:desc",
   });
 
-  const result = await strapiJwtRequest<StrapiCollectionResponse<AttendeeRecord>>(
-    `/attendees?${params.toString()}`,
-    jwt,
-  );
+  const path = `/attendees?${params.toString()}`;
+  const result = jwt
+    ? await strapiJwtRequest<StrapiCollectionResponse<AttendeeRecord>>(path, jwt)
+    : await strapiRequest<StrapiCollectionResponse<AttendeeRecord>>(path);
 
   return result.data[0] ?? null;
 }
 
-export async function listAttendees(jwt: string) {
+export async function listAttendees(jwt?: string) {
   const params = new URLSearchParams({
     "pagination[pageSize]": "250",
     sort: "registeredAt:desc",
   });
 
-  const result = await strapiJwtRequest<StrapiCollectionResponse<AttendeeRecord>>(
-    `/attendees?${params.toString()}`,
-    jwt,
-  );
+  const path = `/attendees?${params.toString()}`;
+  const result = jwt
+    ? await strapiJwtRequest<StrapiCollectionResponse<AttendeeRecord>>(path, jwt)
+    : await strapiRequest<StrapiCollectionResponse<AttendeeRecord>>(path);
 
   return result.data;
 }

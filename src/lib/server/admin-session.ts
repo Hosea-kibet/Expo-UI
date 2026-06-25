@@ -6,7 +6,7 @@ import { authOptions } from "@/auth";
 export async function getAdminSession() {
   const session = await getServerSession(authOptions);
 
-  if (session?.user?.role !== "admin" || !session.user.strapiJwt) {
+  if (!session?.user || (session.user.role !== "admin" && session.user.role !== "staff")) {
     return null;
   }
 
@@ -18,12 +18,14 @@ export async function getAdminTokenFromRequest(request: NextRequest) {
     req: request,
   });
 
-  if (token?.authProvider !== "strapi-admin" || !token.strapiJwt) {
+  if (!token?.authProvider || token.authProvider === "attendee-otp") {
     return null;
   }
 
   return {
-    strapiJwt: String(token.strapiJwt),
+    strapiJwt: String(token.strapiJwt ?? ""),
     adminId: String(token.adminId ?? ""),
+    expoAccess: token.expoAccess === "admin" ? "admin" : "staff",
+    authProvider: token.authProvider,
   };
 }

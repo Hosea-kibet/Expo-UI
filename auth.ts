@@ -1,6 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { loginStrapiUser } from "@/src/lib/server/strapi-admin";
+import { loginExpoUser } from "@/src/lib/server/strapi-admin";
 import { verifyAttendeeOtp } from "@/src/lib/server/attendee-otp";
 
 export const authOptions: NextAuthOptions = {
@@ -55,18 +55,17 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const result = await loginStrapiUser(identifier, password);
-
-          if (result.user.blocked) {
-            return null;
-          }
+          const result = await loginExpoUser(identifier, password);
 
           return {
-            id: `strapi-user-${result.user.id}`,
-            email: result.user.email,
-            name: result.user.username,
-            role: "admin",
-            strapiJwt: result.jwt,
+            id: result.id,
+            email: result.email,
+            name: result.name,
+            role: result.expoAccess,
+            authProvider: result.authProvider,
+            strapiJwt: result.strapiJwt,
+            strapiRoleName: result.strapiRoleName,
+            strapiRoleType: result.strapiRoleType,
           };
         } catch {
           return null;
@@ -77,12 +76,18 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.authProvider = user.role === "admin" ? "strapi-admin" : "attendee-otp";
+        token.authProvider =
+          user.role === "attendee"
+            ? "attendee-otp"
+            : ((user as { authProvider?: "strapi-admin" | "strapi-staff" }).authProvider ?? "strapi-staff");
 
-        if (user.role === "admin") {
+        if (user.role === "admin" || user.role === "staff") {
           token.adminId = user.id;
           token.adminName = user.name;
           token.strapiJwt = (user as { strapiJwt?: string }).strapiJwt;
+          token.expoAccess = user.role;
+          token.strapiRoleName = (user as { strapiRoleName?: string }).strapiRoleName;
+          token.strapiRoleType = (user as { strapiRoleType?: string }).strapiRoleType;
           delete token.attendeeId;
           delete token.registrationReference;
         } else {
@@ -91,6 +96,9 @@ export const authOptions: NextAuthOptions = {
           delete token.adminId;
           delete token.adminName;
           delete token.strapiJwt;
+          delete token.expoAccess;
+          delete token.strapiRoleName;
+          delete token.strapiRoleType;
         }
       }
 
@@ -100,8 +108,15 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = String(token.attendeeId ?? token.adminId ?? "");
         session.user.registrationReference = String(token.registrationReference ?? "");
-        session.user.role = token.authProvider === "strapi-admin" ? "admin" : "attendee";
-        session.user.strapiJwt = token.authProvider === "strapi-admin" ? String(token.strapiJwt ?? "") : "";
+        session.user.role =
+          token.authProvider === "attendee-otp"
+            ? "attendee"
+            : (String(token.expoAccess ?? "staff") as "admin" | "staff" | "attendee");
+        session.user.strapiJwt = token.authProvider === "attendee-otp" ? "" : String(token.strapiJwt ?? "");
+        session.user.strapiRoleName =
+          token.authProvider === "attendee-otp" ? "" : String(token.strapiRoleName ?? "");
+        session.user.strapiRoleType =
+          token.authProvider === "attendee-otp" ? "" : String(token.strapiRoleType ?? "");
       }
 
       return session;
