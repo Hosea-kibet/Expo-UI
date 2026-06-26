@@ -178,7 +178,7 @@ async function strapiRequest<T>(path: string, init?: RequestInit) {
     } catch {
       // not JSON — use raw text below
     }
-    const err = new Error(message || text || `Strapi request failed with ${response.status}`);
+    const err = new Error(message || text || `Request failed with ${response.status}`);
     (err as Error & { status?: number }).status = response.status;
     throw err;
   }
@@ -239,7 +239,7 @@ export async function loginExpoUser(identifier: string, password: string): Promi
   const adminUser = adminResult.data?.user;
 
   if (!accessToken || !adminUser?.email) {
-    throw new Error("Strapi admin login did not return a valid admin user.");
+    throw new Error("Admin login did not return a valid admin user.");
   }
 
   const fullName = [adminUser.firstname, adminUser.lastname].filter(Boolean).join(" ").trim();
@@ -339,7 +339,7 @@ export async function createAttendee(data: Record<string, unknown>) {
   });
 
   if (!result.data) {
-    throw new Error("Strapi did not return the attendee record.");
+    throw new Error("Failed to create attendee record.");
   }
 
   return result.data;
@@ -352,7 +352,7 @@ export async function updateAttendee(documentId: string, data: Record<string, un
   });
 
   if (!result.data) {
-    throw new Error("Strapi did not return the updated attendee record.");
+    throw new Error("Failed to retrieve the updated attendee record.");
   }
 
   return result.data;
@@ -373,7 +373,7 @@ export async function updateAttendeeWithJwt(
   );
 
   if (!result.data) {
-    throw new Error("Strapi did not return the updated attendee record.");
+    throw new Error("Failed to update attendee record.");
   }
 
   return result.data;

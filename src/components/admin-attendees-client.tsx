@@ -603,7 +603,7 @@ export function AdminAttendeesClient({
                     <td colSpan={4} className="admin-empty-cell">
                       <div className="admin-loading-state">
                         <LoaderCircle className="spin" />
-                        <span>Loading attendees from Strapi...</span>
+                        <span>Loading attendees ...</span>
                       </div>
                     </td>
                   </tr>
