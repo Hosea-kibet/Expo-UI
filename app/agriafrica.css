@@ -6229,14 +6229,16 @@ header.nav.scrolled .logo-mark-icon {
 }
 
 .admin-auth-form,
-.admin-scan-form {
+.admin-scan-form,
+.admin-sms-form {
   display: grid;
   gap: 1rem;
   margin-top: 1.5rem;
 }
 
 .admin-auth-form label,
-.admin-scan-form label {
+.admin-scan-form label,
+.admin-sms-form label {
   display: grid;
   gap: 0.45rem;
   font-size: 0.95rem;
@@ -6244,8 +6246,10 @@ header.nav.scrolled .logo-mark-icon {
 
 .admin-auth-form input,
 .admin-scan-form input,
+.admin-sms-form textarea,
 .admin-search-input,
-.admin-attendees-table input {
+.admin-attendees-table input,
+.admin-select-input {
   width: 100%;
   min-height: 48px;
   border-radius: 14px;
@@ -6253,6 +6257,12 @@ header.nav.scrolled .logo-mark-icon {
   background: #fff;
   padding: 0.85rem 1rem;
   color: inherit;
+}
+
+.admin-sms-form textarea {
+  min-height: 160px;
+  resize: vertical;
+  font: inherit;
 }
 
 .admin-inline-message {
@@ -6351,6 +6361,90 @@ header.nav.scrolled .logo-mark-icon {
   gap: 1rem;
 }
 
+.admin-segmented-control {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.admin-segmented-option,
+.admin-sms-summary,
+.admin-sms-pick-card,
+.admin-selected-attendee,
+.admin-empty-inline {
+  border: 1px solid rgba(65, 82, 39, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 18px;
+}
+
+.admin-segmented-option {
+  min-height: 56px;
+  padding: 0.9rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  color: inherit;
+}
+
+.admin-segmented-option.is-active {
+  border-color: rgba(73, 132, 74, 0.4);
+  background: rgba(73, 132, 74, 0.12);
+}
+
+.admin-sms-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 1.25rem;
+}
+
+.admin-sms-summary {
+  padding: 1rem;
+}
+
+.admin-sms-summary small,
+.admin-selected-attendee span {
+  display: block;
+  color: rgba(29, 36, 22, 0.68);
+}
+
+.admin-sms-summary strong,
+.admin-selected-attendee strong {
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.admin-sms-pick-card {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.admin-select-wrap {
+  position: relative;
+}
+
+.admin-select-input {
+  appearance: none;
+}
+
+.admin-select-loader {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+}
+
+.admin-selected-attendee,
+.admin-empty-inline {
+  padding: 0.9rem 1rem;
+}
+
 .admin-loading-state {
   display: flex;
   align-items: center;
@@ -6435,6 +6529,11 @@ header.nav.scrolled .logo-mark-icon {
 
   .admin-search-field {
     width: 100%;
+  }
+
+  .admin-segmented-control,
+  .admin-sms-summary-grid {
+    grid-template-columns: 1fr;
   }
 }
 

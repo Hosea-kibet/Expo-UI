@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   LoaderCircle,
   LogOut,
+  MessageSquareText,
   RefreshCw,
   ScanLine,
   Search,
@@ -455,6 +456,9 @@ export function AdminAttendeesClient({
           <p>{adminName ? `Signed in as ${adminName}.` : "Manage attendee confirmations and notes."}</p>
         </div>
         <div className="admin-attendees-actions">
+          <Link className="btn btn-secondary" href="/admin/sms">
+            <MessageSquareText /> SMS
+          </Link>
           <button className="btn btn-secondary" type="button" disabled={isRefreshing} onClick={() => void refreshAttendees()}>
             {isRefreshing ? <LoaderCircle className="spin" /> : <RefreshCw />}
             {isRefreshing ? "Refreshing..." : "Refresh"}
