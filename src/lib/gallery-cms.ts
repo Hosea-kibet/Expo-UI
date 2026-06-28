@@ -1,3 +1,8 @@
+import { unstable_cache } from "next/cache";
+import {
+  getGallerySnapshotCacheTags,
+  getGallerySnapshotRevalidateSeconds,
+} from "@/src/lib/cache";
 import { normalizeStrapiAssetUrl } from "@/src/lib/strapi-media";
 import { getGalleryItemsContent } from "@/src/lib/strapi-content";
 
@@ -54,44 +59,55 @@ function extractMediaUrl(media: unknown) {
   return undefined;
 }
 
-export async function getGallerySnapshot(): Promise<GallerySnapshotItem[]> {
-  const response = await getGalleryItemsContent();
+const getCachedGallerySnapshot = unstable_cache(
+  async (): Promise<GallerySnapshotItem[]> => {
+    const response = await getGalleryItemsContent();
 
-  if (!Array.isArray(response.data)) {
-    return [];
-  }
-
-  const items: GallerySnapshotItem[] = [];
-
-  response.data.forEach((item) => {
-    const record = item as Record<string, unknown>;
-    if (
-      typeof record.title !== "string" ||
-      typeof record.year !== "number" ||
-      (record.mediaType !== "image" && record.mediaType !== "video")
-    ) {
-      return;
+    if (!Array.isArray(response.data)) {
+      return [];
     }
 
-    const src = extractMediaUrl(record.media);
-    if (!src) return;
+    const items: GallerySnapshotItem[] = [];
 
-    const poster = extractMediaUrl(record.poster);
+    response.data.forEach((item) => {
+      const record = item as Record<string, unknown>;
+      if (
+        typeof record.title !== "string" ||
+        typeof record.year !== "number" ||
+        (record.mediaType !== "image" && record.mediaType !== "video")
+      ) {
+        return;
+      }
 
-    items.push({
-      year: String(record.year),
-      type: record.mediaType,
-      src,
-      ...(poster ? { poster } : {}),
-      title: record.title,
-      caption: typeof record.caption === "string" ? record.caption : "",
-      alt:
-        typeof record.alt === "string" && record.alt.length > 0
-          ? record.alt
-          : record.title,
-      wide: record.wide === true,
+      const src = extractMediaUrl(record.media);
+      if (!src) return;
+
+      const poster = extractMediaUrl(record.poster);
+
+      items.push({
+        year: String(record.year),
+        type: record.mediaType,
+        src,
+        ...(poster ? { poster } : {}),
+        title: record.title,
+        caption: typeof record.caption === "string" ? record.caption : "",
+        alt:
+          typeof record.alt === "string" && record.alt.length > 0
+            ? record.alt
+            : record.title,
+        wide: record.wide === true,
+      });
     });
-  });
 
-  return items;
+    return items;
+  },
+  ["gallery-snapshot"],
+  {
+    revalidate: getGallerySnapshotRevalidateSeconds(),
+    tags: getGallerySnapshotCacheTags(),
+  },
+);
+
+export async function getGallerySnapshot(): Promise<GallerySnapshotItem[]> {
+  return getCachedGallerySnapshot();
 }

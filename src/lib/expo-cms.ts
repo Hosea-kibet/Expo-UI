@@ -1,3 +1,8 @@
+import { unstable_cache } from "next/cache";
+import {
+  getExpoSnapshotCacheTags,
+  getExpoSnapshotRevalidateSeconds,
+} from "@/src/lib/cache";
 import {
   getExhibitorsContent,
   getExpoPageContent,
@@ -258,95 +263,106 @@ function normalizeOverviewCategories(value: unknown) {
     .filter((item): item is string => typeof item === "string" && item.length > 0);
 }
 
+const getCachedExpoCmsSnapshot = unstable_cache(
+  async (): Promise<ExpoCmsSnapshot> => {
+    const [expoPageResponse, exhibitorsResponse, supportUnitsResponse, programmeDaysResponse] =
+      await Promise.all([
+        getExpoPageContent(),
+        getExhibitorsContent(),
+        getSupportUnitsContent(),
+        getProgrammeDaysContent(),
+      ]);
+
+    const expoPageRecord =
+      expoPageResponse.data && typeof expoPageResponse.data === "object"
+        ? (expoPageResponse.data as Record<string, unknown>)
+        : null;
+
+    const exhibitors = Array.isArray(exhibitorsResponse.data)
+      ? exhibitorsResponse.data
+          .map((item) => normalizeExhibitor(item as Record<string, unknown>))
+          .filter((item): item is Exhibitor => item !== null)
+      : [];
+
+    const supportUnits = Array.isArray(supportUnitsResponse.data)
+      ? supportUnitsResponse.data
+          .map((item) => normalizeSupportUnit(item as Record<string, unknown>))
+          .filter((item): item is SupportUnit => item !== null)
+      : [];
+
+    const programmeDays = Array.isArray(programmeDaysResponse.data)
+      ? programmeDaysResponse.data
+          .map((item) => normalizeProgrammeDay(item as Record<string, unknown>))
+          .filter((item): item is ProgrammeDay => item !== null)
+      : [];
+
+    const snapshot: ExpoCmsSnapshot = {
+      expoPage: {
+        dates:
+          expoPageRecord && typeof expoPageRecord.dates === "string"
+            ? expoPageRecord.dates
+            : "",
+        venue:
+          expoPageRecord && typeof expoPageRecord.venue === "string"
+            ? expoPageRecord.venue
+            : "",
+        theme:
+          expoPageRecord && typeof expoPageRecord.theme === "string"
+            ? expoPageRecord.theme
+            : "",
+        overviewIntro:
+          expoPageRecord && typeof expoPageRecord.overviewIntro === "string"
+            ? expoPageRecord.overviewIntro
+            : "",
+        overviewBody:
+          expoPageRecord && typeof expoPageRecord.overviewBody === "string"
+            ? expoPageRecord.overviewBody
+            : "",
+        overviewGuests: normalizeOverviewGuests(expoPageRecord?.overviewGuests),
+        overviewObjectives: normalizeOverviewObjectives(expoPageRecord?.overviewObjectives),
+        overviewCategories: normalizeOverviewCategories(expoPageRecord?.overviewCategories),
+        floorPlanUrl:
+          extractMediaUrl(expoPageRecord?.floorPlan) ??
+          normalizeAssetUrl(
+            expoPageRecord && typeof expoPageRecord.floorPlanUrl === "string"
+              ? expoPageRecord.floorPlanUrl
+              : undefined,
+          ) ??
+          "",
+      },
+      exhibitors,
+      supportUnits,
+      programmeDays,
+    };
+
+    const missingFields: string[] = [];
+
+    if (!snapshot.expoPage.dates) missingFields.push("expo-page.dates");
+    if (!snapshot.expoPage.venue) missingFields.push("expo-page.venue");
+    if (!snapshot.expoPage.theme) missingFields.push("expo-page.theme");
+    if (!snapshot.expoPage.overviewIntro) missingFields.push("expo-page.overviewIntro");
+    if (!snapshot.expoPage.overviewBody) missingFields.push("expo-page.overviewBody");
+    if (!snapshot.expoPage.floorPlanUrl) missingFields.push("expo-page.floorPlan");
+    if (snapshot.exhibitors.length === 0) missingFields.push("exhibitors");
+    if (snapshot.supportUnits.length === 0) missingFields.push("support-units");
+    if (snapshot.supportUnits.some((item) => !item.logoSrc)) missingFields.push("support-units.logo");
+    if (snapshot.programmeDays.length === 0) missingFields.push("programme-days");
+
+    if (missingFields.length > 0) {
+      throw new Error(`Expo content is incomplete in Strapi. Missing fields: ${missingFields.join(", ")}`);
+    }
+
+    return snapshot;
+  },
+  ["expo-cms-snapshot"],
+  {
+    revalidate: getExpoSnapshotRevalidateSeconds(),
+    tags: getExpoSnapshotCacheTags(),
+  },
+);
+
 export async function getExpoCmsSnapshot(): Promise<ExpoCmsSnapshot> {
-  const [expoPageResponse, exhibitorsResponse, supportUnitsResponse, programmeDaysResponse] =
-    await Promise.all([
-      getExpoPageContent(),
-      getExhibitorsContent(),
-      getSupportUnitsContent(),
-      getProgrammeDaysContent(),
-    ]);
-
-  const expoPageRecord =
-    expoPageResponse.data && typeof expoPageResponse.data === "object"
-      ? (expoPageResponse.data as Record<string, unknown>)
-      : null;
-
-  const exhibitors = Array.isArray(exhibitorsResponse.data)
-    ? exhibitorsResponse.data
-        .map((item) => normalizeExhibitor(item as Record<string, unknown>))
-        .filter((item): item is Exhibitor => item !== null)
-    : [];
-
-  const supportUnits = Array.isArray(supportUnitsResponse.data)
-    ? supportUnitsResponse.data
-        .map((item) => normalizeSupportUnit(item as Record<string, unknown>))
-        .filter((item): item is SupportUnit => item !== null)
-    : [];
-
-  const programmeDays = Array.isArray(programmeDaysResponse.data)
-    ? programmeDaysResponse.data
-        .map((item) => normalizeProgrammeDay(item as Record<string, unknown>))
-        .filter((item): item is ProgrammeDay => item !== null)
-    : [];
-
-  const snapshot: ExpoCmsSnapshot = {
-    expoPage: {
-      dates:
-        expoPageRecord && typeof expoPageRecord.dates === "string"
-          ? expoPageRecord.dates
-          : "",
-      venue:
-        expoPageRecord && typeof expoPageRecord.venue === "string"
-          ? expoPageRecord.venue
-          : "",
-      theme:
-        expoPageRecord && typeof expoPageRecord.theme === "string"
-          ? expoPageRecord.theme
-          : "",
-      overviewIntro:
-        expoPageRecord && typeof expoPageRecord.overviewIntro === "string"
-          ? expoPageRecord.overviewIntro
-          : "",
-      overviewBody:
-        expoPageRecord && typeof expoPageRecord.overviewBody === "string"
-          ? expoPageRecord.overviewBody
-          : "",
-      overviewGuests: normalizeOverviewGuests(expoPageRecord?.overviewGuests),
-      overviewObjectives: normalizeOverviewObjectives(expoPageRecord?.overviewObjectives),
-      overviewCategories: normalizeOverviewCategories(expoPageRecord?.overviewCategories),
-      floorPlanUrl:
-        extractMediaUrl(expoPageRecord?.floorPlan) ??
-        normalizeAssetUrl(
-          expoPageRecord && typeof expoPageRecord.floorPlanUrl === "string"
-            ? expoPageRecord.floorPlanUrl
-            : undefined,
-        ) ??
-        "",
-    },
-    exhibitors,
-    supportUnits,
-    programmeDays,
-  };
-
-  const missingFields: string[] = [];
-
-  if (!snapshot.expoPage.dates) missingFields.push("expo-page.dates");
-  if (!snapshot.expoPage.venue) missingFields.push("expo-page.venue");
-  if (!snapshot.expoPage.theme) missingFields.push("expo-page.theme");
-  if (!snapshot.expoPage.overviewIntro) missingFields.push("expo-page.overviewIntro");
-  if (!snapshot.expoPage.overviewBody) missingFields.push("expo-page.overviewBody");
-  if (!snapshot.expoPage.floorPlanUrl) missingFields.push("expo-page.floorPlan");
-  if (snapshot.exhibitors.length === 0) missingFields.push("exhibitors");
-  if (snapshot.supportUnits.length === 0) missingFields.push("support-units");
-  if (snapshot.supportUnits.some((item) => !item.logoSrc)) missingFields.push("support-units.logo");
-  if (snapshot.programmeDays.length === 0) missingFields.push("programme-days");
-
-  if (missingFields.length > 0) {
-    throw new Error(`Expo content is incomplete in Strapi. Missing fields: ${missingFields.join(", ")}`);
-  }
-
-  return snapshot;
+  return getCachedExpoCmsSnapshot();
 }
 
 export async function getExpoExhibitorBySlug(slug: string) {

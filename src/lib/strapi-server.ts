@@ -1,4 +1,8 @@
 import { NextRequest } from "next/server";
+import {
+  getStrapiCacheTags,
+  getStrapiRevalidateSeconds,
+} from "@/src/lib/cache";
 
 export async function proxyStrapiRequest(
   request: NextRequest,
@@ -20,14 +24,28 @@ export async function proxyStrapiRequest(
     upstreamUrl.searchParams.append(key, value);
   });
 
-  const init: RequestInit = {
+  const joinedEndpoint = joinedPath.replace(/^\/+/, "");
+  const isCacheableMethod = ["GET", "HEAD"].includes(request.method);
+  const init: RequestInit & {
+    next?: {
+      revalidate: number;
+      tags: string[];
+    };
+  } = {
     method: request.method,
     headers: {
       "Content-Type": request.headers.get("content-type") ?? "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    cache: "no-store",
+    cache: isCacheableMethod ? "force-cache" : "no-store",
   };
+
+  if (isCacheableMethod) {
+    init.next = {
+      revalidate: getStrapiRevalidateSeconds(joinedEndpoint),
+      tags: getStrapiCacheTags(joinedEndpoint),
+    };
+  }
 
   if (!["GET", "HEAD"].includes(request.method)) {
     init.body = await request.text();
@@ -40,6 +58,11 @@ export async function proxyStrapiRequest(
     status: response.status,
     headers: {
       "Content-Type": response.headers.get("content-type") ?? "application/json",
+      ...(isCacheableMethod
+        ? {
+            "Cache-Control": `public, s-maxage=${getStrapiRevalidateSeconds(joinedEndpoint)}, stale-while-revalidate=${getStrapiRevalidateSeconds(joinedEndpoint)}`,
+          }
+        : { "Cache-Control": "no-store" }),
     },
   });
 }

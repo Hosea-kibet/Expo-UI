@@ -1,3 +1,5 @@
+import { getStrapiCacheTags, getStrapiRevalidateSeconds } from "@/src/lib/cache";
+
 type QueryValue = string | number | boolean;
 
 type QueryParams = Record<string, QueryValue | QueryValue[] | undefined>;
@@ -35,13 +37,28 @@ export async function fetchStrapi<T>(
 ): Promise<T> {
   const baseUrl = getStrapiApiBaseUrl().replace(/\/$/, "");
   const normalizedEndpoint = endpoint.replace(/^\//, "");
-
-  const response = await fetch(`${baseUrl}/${normalizedEndpoint}${buildQuery(params)}`, {
-    cache: "no-store",
+  const isServer = typeof window === "undefined";
+  const requestUrl = `${baseUrl}/${normalizedEndpoint}${buildQuery(params)}`;
+  const requestInit: RequestInit & {
+    next?: {
+      revalidate: number;
+      tags: string[];
+    };
+  } = {
+    cache: isServer ? "force-cache" : "no-store",
     headers: {
       "Content-Type": "application/json",
     },
-  });
+  };
+
+  if (isServer) {
+    requestInit.next = {
+      revalidate: getStrapiRevalidateSeconds(endpoint),
+      tags: getStrapiCacheTags(endpoint),
+    };
+  }
+
+  const response = await fetch(requestUrl, requestInit);
 
   if (!response.ok) {
     throw new Error(`Strapi request failed with status ${response.status}`);
