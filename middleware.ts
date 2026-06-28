@@ -3,7 +3,12 @@ import type { NextRequest } from "next/server";
 import { getToken, type JWT } from "next-auth/jwt";
 
 function isAuthorizedAdminToken(token: JWT | null) {
-  return token?.authProvider === "strapi-admin" && (token.expoAccess === "admin" || token.expoAccess === "staff");
+  return (
+    token?.authProvider === "strapi-admin" &&
+    (token.expoAccess === "admin" || token.expoAccess === "staff") &&
+    typeof token.adminId === "string" &&
+    token.adminId.length > 0
+  );
 }
 
 export async function middleware(request: NextRequest) {
