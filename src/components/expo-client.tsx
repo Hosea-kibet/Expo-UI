@@ -521,6 +521,7 @@ export default function ExpoClient({
   const programmeDaysData = initialData.programmeDays;
   const expoPage = initialData.expoPage;
   const [activeTab, setActiveTab] = useState<ExpoViewTab>("overview");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
   const [partnerModal, setPartnerModal] = useState<null | {
     badge: string;
@@ -574,19 +575,13 @@ export default function ExpoClient({
       window.addEventListener("scroll", onScroll, { passive: true });
       cleanup.push(() => window.removeEventListener("scroll", onScroll));
 
-      const menuToggle = document.getElementById("menu-toggle");
-      const mobileMenu = document.getElementById("mobile-menu");
-      if (menuToggle && mobileMenu && nav) {
-        const onMenu = () => {
-          const open = mobileMenu.classList.toggle("open");
-          menuToggle.setAttribute("aria-expanded", String(open));
-        };
+      if (nav) {
         const onDocument = (event: MouseEvent) => {
-          if (event.target instanceof Node && !nav.contains(event.target)) mobileMenu.classList.remove("open");
+          if (event.target instanceof Node && !nav.contains(event.target)) {
+            setMobileMenuOpen(false);
+          }
         };
-        menuToggle.addEventListener("click", onMenu);
         document.addEventListener("click", onDocument);
-        cleanup.push(() => menuToggle.removeEventListener("click", onMenu));
         cleanup.push(() => document.removeEventListener("click", onDocument));
       }
 
@@ -671,7 +666,12 @@ export default function ExpoClient({
     };
   }, []);
 
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
   const changeTab = async (tab: ExpoViewTab) => {
+    closeMobileMenu();
     const currentPanel = document.querySelector<HTMLElement>(".panel.active");
     const nextPanel = document.getElementById(`panel-${tab}`);
 
@@ -714,6 +714,7 @@ export default function ExpoClient({
   const openExhibitor = async (slug: string) => {
     const exhibitor = exhibitorsData.find((item) => item.slug === slug) ?? null;
     if (!exhibitor) return;
+    closeMobileMenu();
     setSelectedExhibitor(exhibitor);
     await changeTab("exhibitor-detail");
   };
@@ -763,7 +764,14 @@ export default function ExpoClient({
             <Link href="/gallery">Gallery</Link>
           </nav>
           <div className="nav-right">
-            <button className="menu-toggle" id="menu-toggle" type="button" aria-controls="mobile-menu" aria-expanded="false">
+            <button
+              className="menu-toggle"
+              id="menu-toggle"
+              type="button"
+              aria-controls="mobile-menu"
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen((open) => !open)}
+            >
               <span className="bars" aria-hidden="true">
                 <span />
                 <span />
@@ -774,15 +782,22 @@ export default function ExpoClient({
               Register Now
             </Link>
           </div>
-          <div className="mobile-menu" id="mobile-menu">
-            <Link href="/">Home</Link>
+          <div className={`mobile-menu${mobileMenuOpen ? " open" : ""}`} id="mobile-menu">
+            <Link href="/" onClick={closeMobileMenu}>Home</Link>
             {(Object.keys(tabLabels) as ExpoTab[]).map((tab) => (
-              <a key={tab} href={`#${tab}`} onClick={(e) => { e.preventDefault(); changeTab(tab); }}>
+              <a
+                key={tab}
+                href={`#${tab}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  void changeTab(tab);
+                }}
+              >
                 {tabLabels[tab]}
               </a>
             ))}
-            <Link href="/gallery">Gallery</Link>
-            <Link href="/visitor-registration">Register Now</Link>
+            <Link href="/gallery" onClick={closeMobileMenu}>Gallery</Link>
+            <Link href="/visitor-registration" onClick={closeMobileMenu}>Register Now</Link>
           </div>
         </div>
       </header>
