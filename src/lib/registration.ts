@@ -16,13 +16,30 @@ export function normalizePhone(phone: string) {
   return phone.replace(/[^\d]/g, "");
 }
 
+export function normalizeLocalPhone(phone: string, countryCode?: string) {
+  let normalized = normalizePhone(phone);
+  const normalizedCountryCode = normalizePhone(countryCode ?? "");
+
+  if (normalizedCountryCode && normalized.startsWith(normalizedCountryCode)) {
+    normalized = normalized.slice(normalizedCountryCode.length);
+  }
+
+  if (normalized.startsWith("0") && normalized.length > 7) {
+    normalized = normalized.slice(1);
+  }
+
+  return normalized;
+}
+
 export function sanitizeRegistrationInput(input: Partial<PendingRegistration>): PendingRegistration {
+  const countryCode = String(input.countryCode ?? "").trim();
+
   return {
     gender: String(input.gender ?? "").trim(),
     firstName: String(input.firstName ?? "").trim(),
     lastName: String(input.lastName ?? "").trim(),
-    countryCode: String(input.countryCode ?? "").trim(),
-    phone: String(input.phone ?? "").trim(),
+    countryCode,
+    phone: normalizeLocalPhone(String(input.phone ?? "").trim(), countryCode),
     email: String(input.email ?? "")
       .trim()
       .toLowerCase(),
@@ -60,7 +77,7 @@ export function validatePendingRegistration(input: PendingRegistration) {
     throw new Error("Invalid email address.");
   }
 
-  if (normalizePhone(input.phone).length < 7) {
+  if (normalizeLocalPhone(input.phone, input.countryCode).length < 7) {
     throw new Error("Invalid phone number.");
   }
 }

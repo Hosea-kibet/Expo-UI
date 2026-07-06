@@ -1,5 +1,5 @@
 import type { PendingRegistration } from "@/src/lib/registration";
-import { normalizePhone } from "@/src/lib/registration";
+import { normalizeLocalPhone, normalizePhone } from "@/src/lib/registration";
 
 export type AttendeeRecord = {
   id: number;
@@ -383,14 +383,16 @@ export function attendeePayloadFromRegistration(
   registration: PendingRegistration,
   extra: Record<string, unknown> = {},
 ) {
+  const localPhone = normalizeLocalPhone(registration.phone, registration.countryCode);
+
   return {
     gender: registration.gender,
     firstName: registration.firstName,
     lastName: registration.lastName,
     email: registration.email,
     countryCode: registration.countryCode,
-    phone: normalizePhone(registration.phone),
-    fullPhoneNumber: `${registration.countryCode}${normalizePhone(registration.phone)}`,
+    phone: localPhone,
+    fullPhoneNumber: `${registration.countryCode}${localPhone}`,
     country: registration.country,
     city: registration.city,
     company: registration.company || null,

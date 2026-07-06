@@ -21,6 +21,7 @@ import { useEffect, useRef, useState } from "react";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import { PagePreloader } from "@/src/components/page-preloader";
 import {
+  normalizeLocalPhone,
   sanitizeRegistrationInput,
   type PendingRegistration,
 } from "@/src/lib/registration";
@@ -62,7 +63,9 @@ function phonePlaceholderForCountry(isoCode: string) {
   const example = getExampleNumber(isoCode as CountryCode, examples);
 
   return (
-    example?.formatNational().replace(/[-()]/g, " ").replace(/\s+/g, " ").trim() ?? "700 000 000"
+    normalizeLocalPhone(
+      example?.formatNational().replace(/[-()]/g, " ").replace(/\s+/g, " ").trim() ?? "700 000 000",
+    )
   );
 }
 
@@ -364,7 +367,7 @@ export function VisitorRegistrationClient({
 
 
 
-                <details className="register-extra">
+                <details className="register-extra" open>
                   <summary>
                     <span>
                       <strong>Professional information</strong>
