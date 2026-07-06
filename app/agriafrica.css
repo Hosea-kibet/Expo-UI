@@ -4815,6 +4815,106 @@ footer.site .ptn-link {
   color: var(--field-900);
 }
 
+.country-select__control {
+  width: 100%;
+  min-height: 45px !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 4px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  transition: none !important;
+}
+
+.country-select__control:hover {
+  border-color: var(--line-strong) !important;
+}
+
+.country-select__value-container {
+  min-height: 43px;
+  padding: 0 12px !important;
+}
+
+.country-select__input-container,
+.country-select__single-value,
+.country-select__placeholder,
+.country-select__option {
+  font: 500 14px/1.2 var(--sans) !important;
+  text-transform: none;
+}
+
+.country-select__single-value,
+.country-select__input-container,
+.country-select__option {
+  color: var(--field-900) !important;
+}
+
+.country-select__placeholder {
+  color: color-mix(in srgb, var(--field-900) 60%, white) !important;
+}
+
+.country-select__single-value,
+.country-select__placeholder {
+  margin: 0 !important;
+}
+
+.country-select__input-container {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.country-select__indicators {
+  padding-right: 8px;
+}
+
+.country-select__indicator-separator {
+  display: none;
+}
+
+.country-select__dropdown-indicator {
+  color: var(--fg3) !important;
+  padding: 0 !important;
+}
+
+.country-select__menu {
+  z-index: 20 !important;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px !important;
+  background: #fff !important;
+  box-shadow: 0 10px 24px rgba(24, 35, 16, .08) !important;
+  margin-top: 4px !important;
+}
+
+.country-select__option {
+  padding: 11px 12px !important;
+  cursor: pointer !important;
+  background: #fff !important;
+}
+
+.country-select__option--is-focused {
+  background: rgba(95, 168, 60, .08) !important;
+}
+
+.country-select__option--is-selected {
+  background: #fff !important;
+}
+
+.country-select__control--is-focused {
+  border-color: var(--leaf-500) !important;
+  box-shadow: 0 0 0 3px rgba(95, 168, 60, .11) !important;
+}
+
+.country-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.country-option-flag {
+  font-size: 16px;
+  line-height: 1;
+}
+
 .phone-field,
 .otp-field {
   display: grid;

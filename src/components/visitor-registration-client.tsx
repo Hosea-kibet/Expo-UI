@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { getSession, signIn } from "next-auth/react";
+import Select, { type SingleValue } from "react-select";
+import { City, Country } from "country-state-city";
+import { getExampleNumber, type CountryCode } from "libphonenumber-js";
+import examples from "libphonenumber-js/mobile/examples";
 import {
   ArrowLeft,
   ArrowRight,
@@ -25,6 +29,42 @@ import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
 type RegistrationStep = "form" | "verification" | "complete";
 type SubmitState = "idle" | "submitting" | "error";
+type CountryOption = {
+  value: string;
+  label: string;
+  isoCode: string;
+  phoneCode: string;
+};
+type CityOption = {
+  value: string;
+  label: string;
+};
+
+const countryOptions: CountryOption[] = Country.getAllCountries()
+  .map((country) => ({
+    value: country.name,
+    label: country.name,
+    isoCode: country.isoCode,
+    phoneCode: `+${country.phonecode}`,
+  }))
+  .sort((left, right) => left.label.localeCompare(right.label));
+
+const defaultCountryOption =
+  countryOptions.find((country) => country.value === "Kenya") ?? countryOptions[0];
+
+function flagFromIsoCode(isoCode: string) {
+  return isoCode
+    .toUpperCase()
+    .replace(/./g, (character) => String.fromCodePoint(127397 + character.charCodeAt(0)));
+}
+
+function phonePlaceholderForCountry(isoCode: string) {
+  const example = getExampleNumber(isoCode as CountryCode, examples);
+
+  return (
+    example?.formatNational().replace(/[-()]/g, " ").replace(/\s+/g, " ").trim() ?? "700 000 000"
+  );
+}
 
 export function VisitorRegistrationClient({
   expoPage,
@@ -41,13 +81,30 @@ export function VisitorRegistrationClient({
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitError, setSubmitError] = useState("");
   const [resendAvailableIn, setResendAvailableIn] = useState(0);
+  const [selectedCountry, setSelectedCountry] = useState<CountryOption>(defaultCountryOption);
+  const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
   const verificationRef = useRef<HTMLInputElement | null>(null);
+  const countryCities = City.getCitiesOfCountry(selectedCountry.isoCode) ?? [];
+  const cityOptions: CityOption[] = countryCities
+    .map((city) => ({
+      value: city.name,
+      label: city.name,
+    }))
+    .filter(
+      (city, index, list) => list.findIndex((candidate) => candidate.value === city.value) === index,
+    )
+    .sort((left, right) => left.label.localeCompare(right.label));
+  const phonePlaceholder = phonePlaceholderForCountry(selectedCountry.isoCode);
 
   useEffect(() => {
     if (step === "verification") {
       verificationRef.current?.focus();
     }
   }, [step]);
+
+  useEffect(() => {
+    setSelectedCity(null);
+  }, [selectedCountry]);
 
   useEffect(() => {
     if (resendAvailableIn <= 0) return;
@@ -222,30 +279,73 @@ export function VisitorRegistrationClient({
 
                 <div className="register-section">
                   <div className="register-section-title">
-                    <span>02</span> Contact &amp; verification
+                    <span>02</span> Location
+                  </div>
+                  <div className="register-fields two-col">
+                    <label>
+                      Country <span className="required-mark">*</span>
+                      <input type="hidden" name="country" value={selectedCountry.value} />
+                      <Select<CountryOption, false>
+                        classNamePrefix="country-select"
+                        isSearchable
+                        options={countryOptions}
+                        value={selectedCountry}
+                        onChange={(option: SingleValue<CountryOption>) => {
+                          if (option) {
+                            setSelectedCountry(option);
+                          }
+                        }}
+                        aria-label="Country"
+                        placeholder="Select country"
+                        formatOptionLabel={(option) => (
+                          <span className="country-option">
+                            <span className="country-option-flag" aria-hidden="true">
+                              {flagFromIsoCode(option.isoCode)}
+                            </span>
+                            <span>{option.label}</span>
+                          </span>
+                        )}
+                      />
+                    </label>
+                    <label>
+                      City <span className="required-mark">*</span>
+                      <input type="hidden" name="city" value={selectedCity?.value ?? ""} />
+                      <Select<CityOption, false>
+                        classNamePrefix="country-select"
+                        isSearchable
+                        isDisabled={cityOptions.length === 0}
+                        options={cityOptions}
+                        value={selectedCity}
+                        onChange={(option: SingleValue<CityOption>) => {
+                          setSelectedCity(option ?? null);
+                        }}
+                        aria-label="City"
+                        placeholder={cityOptions.length === 0 ? "No cities available" : "City"}
+                      />
+                    </label>
+                  </div>
+                </div>
+                <div className="register-section">
+                  <div className="register-section-title">
+                    <span>03</span> Contact &amp; verification
                   </div>
                   <div className="register-fields two-col">
                     <label>
                       Mobile number <span className="required-mark">*</span>
                       <span className="phone-field">
-                        <select name="countryCode" required aria-label="Country code" defaultValue="+254">
-                          <option value="+254">+254</option>
-                          <option value="+256">+256</option>
-                          <option value="+255">+255</option>
-                          <option value="+250">+250</option>
-                          <option value="+251">+251</option>
-                          <option value="+27">+27</option>
-                          <option value="+234">+234</option>
-                          <option value="+233">+233</option>
-                          <option value="+86">+86</option>
-                          <option value="+91">+91</option>
-                        </select>
+                        <input type="hidden" name="countryCode" value={selectedCountry.phoneCode} />
+                        <input
+                          value={selectedCountry.phoneCode}
+                          readOnly
+                          aria-label="Country code"
+                          tabIndex={-1}
+                        />
                         <input
                           name="phone"
                           type="tel"
                           required
                           autoComplete="tel-national"
-                          placeholder="700 000 000"
+                          placeholder={phonePlaceholder}
                         />
                       </span>
                     </label>
@@ -262,34 +362,7 @@ export function VisitorRegistrationClient({
                   </div>
                 </div>
 
-                <div className="register-section">
-                  <div className="register-section-title">
-                    <span>03</span> Location
-                  </div>
-                  <div className="register-fields two-col">
-                    <label>
-                      Country <span className="required-mark">*</span>
-                      <select name="country" required defaultValue="">
-                        <option value="">Select country</option>
-                        <option>Kenya</option>
-                        <option>Uganda</option>
-                        <option>Tanzania</option>
-                        <option>Rwanda</option>
-                        <option>Ethiopia</option>
-                        <option>South Africa</option>
-                        <option>Nigeria</option>
-                        <option>Ghana</option>
-                        <option>China</option>
-                        <option>India</option>
-                        <option>Other</option>
-                      </select>
-                    </label>
-                    <label>
-                      City <span className="required-mark">*</span>
-                      <input name="city" required autoComplete="address-level2" placeholder="City" />
-                    </label>
-                  </div>
-                </div>
+
 
                 <details className="register-extra">
                   <summary>
