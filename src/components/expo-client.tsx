@@ -442,9 +442,9 @@ function SupportUnitsPanel({
       </div>
       <div className="section-sep" />
       <div className="cta-row reveal in">
-        <a className="btn btn-accent" href="#">
-          Become a Supporaat Unit
-        </a>
+        <Link className="btn btn-accent" href="/contact?enquiryType=partner">
+          Become a Support Unit
+        </Link>
         <a className="btn btn-ghost" href="#">
           Media Accreditation
         </a>

@@ -2,17 +2,62 @@
 
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, BadgeCheck, Mail, MapPin, Phone } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import { PagePreloader } from "@/src/components/page-preloader";
 import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
+
+const ENQUIRY_OPTIONS = [
+  "Visitor Enquiry",
+  "Exhibitor Enquiry",
+  "Partner Enquiry",
+  "Media Enquiry",
+  "General Enquiry",
+] as const;
+
+function getInitialEnquiryType(value: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === "partner" || normalized === "partner-enquiry" || normalized === "partnership") {
+    return "Partner Enquiry";
+  }
+
+  if (normalized === "visitor" || normalized === "visitor-enquiry") {
+    return "Visitor Enquiry";
+  }
+
+  if (normalized === "exhibitor" || normalized === "exhibitor-enquiry") {
+    return "Exhibitor Enquiry";
+  }
+
+  if (normalized === "media" || normalized === "media-enquiry") {
+    return "Media Enquiry";
+  }
+
+  if (normalized === "general" || normalized === "general-enquiry") {
+    return "General Enquiry";
+  }
+
+  return "";
+}
 
 export function ContactPageClient({
   contact,
 }: {
   contact: Pick<HomepageSnapshot, "email" | "phone" | "address">;
 }) {
+  const searchParams = useSearchParams();
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [enquiryType, setEnquiryType] = useState("");
+
+  useEffect(() => {
+    setEnquiryType(getInitialEnquiryType(searchParams.get("enquiryType")));
+  }, [searchParams]);
 
   return (
     <>
@@ -91,13 +136,18 @@ export function ContactPageClient({
               </div>
               <label>
                 Enquiry type
-                <select name="subject" required defaultValue="">
+                <select
+                  name="subject"
+                  required
+                  value={enquiryType}
+                  onChange={(event) => setEnquiryType(event.target.value)}
+                >
                   <option value="">Select a topic</option>
-                  <option>Visitor enquiry</option>
-                  <option>Exhibitor enquiry</option>
-                  <option>Partnership enquiry</option>
-                  <option>Media enquiry</option>
-                  <option>General enquiry</option>
+                  {ENQUIRY_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label>
