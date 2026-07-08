@@ -5777,9 +5777,21 @@ footer.site .ptn-link {
   border-radius: 4px;
 }
 
+.contact-form-card .btn:disabled {
+  opacity: .75;
+  cursor: wait;
+}
+
 .contact-form-card .btn svg {
   width: 16px;
   height: 16px;
+}
+
+.contact-form-error {
+  margin-top: -4px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #a63b11;
 }
 
 .contact-success {

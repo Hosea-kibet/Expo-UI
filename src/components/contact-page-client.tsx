@@ -2,19 +2,12 @@
 
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, BadgeCheck, Mail, MapPin, Phone } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import { PagePreloader } from "@/src/components/page-preloader";
+import { ENQUIRY_OPTIONS } from "@/src/lib/contact-enquiry";
 import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
-
-const ENQUIRY_OPTIONS = [
-  "Visitor Enquiry",
-  "Exhibitor Enquiry",
-  "Partner Enquiry",
-  "Media Enquiry",
-  "General Enquiry",
-] as const;
 
 function getInitialEnquiryType(value: string | null) {
   if (!value) {
@@ -53,11 +46,71 @@ export function ContactPageClient({
 }) {
   const searchParams = useSearchParams();
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState(
+    "Thank you. Our team will get back to you shortly.",
+  );
   const [enquiryType, setEnquiryType] = useState("");
 
   useEffect(() => {
     setEnquiryType(getInitialEnquiryType(searchParams.get("enquiryType")));
   }, [searchParams]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage("");
+
+    const formData = new FormData(event.currentTarget);
+    const payload = {
+      name: String(formData.get("name") ?? ""),
+      email: String(formData.get("email") ?? ""),
+      enquiryType: String(formData.get("enquiryType") ?? ""),
+      message: String(formData.get("message") ?? ""),
+    };
+
+    try {
+      const response = await fetch("/api/contact-enquiries", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = (await response.json()) as {
+        ok: boolean;
+        error?: string;
+        notified?: boolean;
+        warning?: string;
+      };
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || "Unable to submit your enquiry.");
+      }
+
+      setSuccessMessage(
+        result.warning || "Thank you. Our team will get back to you shortly.",
+      );
+      setIsSubmitted(true);
+      event.currentTarget.reset();
+      setEnquiryType(getInitialEnquiryType(searchParams.get("enquiryType")));
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "We could not send your enquiry right now. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <>
@@ -113,10 +166,7 @@ export function ContactPageClient({
           {!isSubmitted ? (
             <form
               id="contact-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                setIsSubmitted(true);
-              }}
+              onSubmit={handleSubmit}
             >
               <div className="contact-fields two-col">
                 <label>
@@ -137,7 +187,7 @@ export function ContactPageClient({
               <label>
                 Enquiry type
                 <select
-                  name="subject"
+                  name="enquiryType"
                   required
                   value={enquiryType}
                   onChange={(event) => setEnquiryType(event.target.value)}
@@ -159,8 +209,13 @@ export function ContactPageClient({
                   placeholder="Tell us how we can help"
                 />
               </label>
-              <button className="btn btn-accent lg block" type="submit">
-                Send enquiry <ArrowRight />
+              {errorMessage ? (
+                <div className="contact-form-error" role="alert" aria-live="polite">
+                  {errorMessage}
+                </div>
+              ) : null}
+              <button className="btn btn-accent lg block" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Sending enquiry..." : "Send enquiry"} <ArrowRight />
               </button>
             </form>
           ) : (
@@ -168,7 +223,7 @@ export function ContactPageClient({
               <BadgeCheck />
               <div>
                 <strong>Message received</strong>
-                <span>Thank you. Our team will get back to you shortly.</span>
+                <span>{successMessage}</span>
               </div>
             </div>
           )}

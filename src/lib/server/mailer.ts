@@ -31,6 +31,20 @@ function getMailerConfig() {
   };
 }
 
+function createMailerTransport() {
+  const config = getMailerConfig();
+
+  return {
+    config,
+    transporter: nodemailer.createTransport({
+      host: config.host,
+      port: config.port,
+      secure: config.secure,
+      auth: config.auth,
+    }),
+  };
+}
+
 export async function sendRegistrationOtpEmail({
   email,
   firstName,
@@ -40,13 +54,7 @@ export async function sendRegistrationOtpEmail({
   firstName: string;
   otp: string;
 }) {
-  const config = getMailerConfig();
-  const transporter = nodemailer.createTransport({
-    host: config.host,
-    port: config.port,
-    secure: config.secure,
-    auth: config.auth,
-  });
+  const { config, transporter } = createMailerTransport();
 
   await transporter.sendMail({
     from: config.from,
@@ -81,13 +89,7 @@ export async function sendRegistrationConfirmationEmail({
   firstName: string;
   registrationReference: string;
 }) {
-  const config = getMailerConfig();
-  const transporter = nodemailer.createTransport({
-    host: config.host,
-    port: config.port,
-    secure: config.secure,
-    auth: config.auth,
-  });
+  const { config, transporter } = createMailerTransport();
 
   const qrCodeDataUrl = await QRCode.toDataURL(registrationReference, {
     errorCorrectionLevel: "M",
@@ -164,13 +166,7 @@ export async function sendEventWelcomeEmail({
   email: string;
   firstName: string;
 }) {
-  const config = getMailerConfig();
-  const transporter = nodemailer.createTransport({
-    host: config.host,
-    port: config.port,
-    secure: config.secure,
-    auth: config.auth,
-  });
+  const { config, transporter } = createMailerTransport();
 
   const safeFirstName = escapeHtml(firstName || "there");
 
@@ -199,6 +195,75 @@ export async function sendEventWelcomeEmail({
           <p style="margin:0;font-size:15px;color:#425466">
             Watch your inbox for event updates, timing details, and any onsite guidance before the expo.
           </p>
+        </div>
+      </div>
+    `,
+  });
+}
+
+export async function sendContactEnquiryNotificationEmail({
+  recipientEmail,
+  name,
+  email,
+  enquiryType,
+  message,
+}: {
+  recipientEmail: string;
+  name: string;
+  email: string;
+  enquiryType: string;
+  message: string;
+}) {
+  const { config, transporter } = createMailerTransport();
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safeEnquiryType = escapeHtml(enquiryType);
+  const safeMessage = escapeHtml(message).replaceAll("\n", "<br />");
+
+  await transporter.sendMail({
+    from: config.from,
+    to: recipientEmail,
+    replyTo: email,
+    subject: `New ${enquiryType} from ${name}`,
+    text: [
+      "A new contact enquiry was submitted on the Expo website.",
+      "",
+      `Full name: ${name}`,
+      `Email address: ${email}`,
+      `Enquiry type: ${enquiryType}`,
+      "",
+      "Message:",
+      message,
+    ].join("\n"),
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#173422;background:#f4efe4;padding:24px">
+        <div style="max-width:640px;margin:0 auto;background:#fffdf8;border-radius:18px;padding:28px">
+          <p style="margin:0 0 12px;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:#e26f2d">
+            New contact enquiry
+          </p>
+          <h1 style="margin:0 0 20px;font-size:30px;line-height:1.1;color:#173422">Someone needs a follow-up.</h1>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+            <tbody>
+              <tr>
+                <td style="padding:8px 0;font-weight:700;vertical-align:top">Full name</td>
+                <td style="padding:8px 0">${safeName}</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0;font-weight:700;vertical-align:top">Email address</td>
+                <td style="padding:8px 0"><a href="mailto:${safeEmail}" style="color:#173422">${safeEmail}</a></td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0;font-weight:700;vertical-align:top">Enquiry type</td>
+                <td style="padding:8px 0">${safeEnquiryType}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="border:1px solid #d4c8a5;border-radius:14px;padding:18px;background:#f9f4e8">
+            <div style="margin-bottom:10px;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#8a7e5f">
+              Message
+            </div>
+            <div style="font-size:15px;color:#425466">${safeMessage}</div>
+          </div>
         </div>
       </div>
     `,

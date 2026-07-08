@@ -30,6 +30,20 @@ export type AttendeeRecord = {
   otpUsedAt?: string | null;
 };
 
+export type ContactEnquiryRecord = {
+  id: number;
+  documentId: string;
+  fullName: string;
+  email: string;
+  enquiryType: string;
+  message: string;
+  submittedAt: string;
+  source?: string | null;
+  notificationStatus: "pending" | "sent" | "failed";
+  notifiedAt?: string | null;
+  notificationError?: string | null;
+};
+
 type StrapiSingleResponse<T> = { data: T | null };
 type StrapiCollectionResponse<T> = { data: T[] };
 type StrapiPaginatedCollectionResponse<T> = {
@@ -401,4 +415,33 @@ export function attendeePayloadFromRegistration(
     consent: registration.consent,
     ...extra,
   };
+}
+
+export async function createContactEnquiry(data: Record<string, unknown>) {
+  const result = await strapiRequest<StrapiSingleResponse<ContactEnquiryRecord>>("/contact-enquiries", {
+    method: "POST",
+    body: JSON.stringify({ data }),
+  });
+
+  if (!result.data) {
+    throw new Error("Failed to create contact enquiry record.");
+  }
+
+  return result.data;
+}
+
+export async function updateContactEnquiry(documentId: string, data: Record<string, unknown>) {
+  const result = await strapiRequest<StrapiSingleResponse<ContactEnquiryRecord>>(
+    `/contact-enquiries/${documentId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ data }),
+    },
+  );
+
+  if (!result.data) {
+    throw new Error("Failed to update contact enquiry record.");
+  }
+
+  return result.data;
 }
