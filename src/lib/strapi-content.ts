@@ -45,6 +45,16 @@ export type HomepageContent = {
   legalRight?: string;
 };
 
+export type PrivacyPolicyContent = {
+  title?: string;
+  content?: string;
+};
+
+export type TermsAndConditionContent = {
+  title?: string;
+  content?: string;
+};
+
 export type ExpoPageContent = {
   theme?: string;
   dates?: string;
@@ -121,16 +131,27 @@ export async function getHomepageContent() {
   });
 }
 
+export async function getPrivacyPolicyContent() {
+  return getStrapiSingle<{ data: StrapiEntity<PrivacyPolicyContent> | null }>("privacy-policy");
+}
+
+export async function getTermsAndConditionContent() {
+  return getStrapiSingle<{ data: StrapiEntity<TermsAndConditionContent> | null }>(
+    "terms-and-condition",
+  );
+}
+
 export async function getExpoPageContent() {
   return getStrapiSingle<{ data: StrapiEntity<ExpoPageContent> | null }>("expo-page", {
     populate: "*",
   });
 }
 
-export async function getExhibitorsContent() {
+export async function getExhibitorsContent(params?: Record<string, string>) {
   return getStrapiCollection<{ data: Array<StrapiEntity<ExhibitorContent>> }>("exhibitors", {
     populate: "*",
     "sort[0]": "name:asc",
+    ...params,
   });
 }
 

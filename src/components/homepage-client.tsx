@@ -17,6 +17,7 @@ import {
   Youtube,
 } from "lucide-react";
 import { BrandPreloader } from "@/src/components/brand-preloader";
+import { LegalFooterLinks } from "@/src/components/legal-links";
 import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
 const pillIcons = [Store, Handshake, CalendarDays] as const;
@@ -758,6 +759,7 @@ export default function HomepageClient({
           </div>
           <div className="legal reveal-up" style={{ transitionDelay: ".22s" }}>
             <span>{initialData.legalLeft}</span>
+            <span><LegalFooterLinks /></span>
             <span>{initialData.legalRight}</span>
           </div>
         </div>

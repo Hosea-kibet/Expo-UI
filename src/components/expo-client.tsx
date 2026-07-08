@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,7 +12,6 @@ import {
   Facebook,
   Globe2,
   Instagram,
-  Layers3,
   LayoutDashboard,
   Linkedin,
   Mail,
@@ -28,6 +27,7 @@ import {
 import { BrandPreloader } from "@/src/components/brand-preloader";
 import { ExpoOverview } from "@/src/components/expo-overview";
 import { PageBodyClass } from "@/src/components/page-body-class";
+import { LegalFooterLinks } from "@/src/components/legal-links";
 import type { ExpoCmsSnapshot } from "@/src/lib/expo-cms";
 import type { Exhibitor, SupportUnit } from "@/src/lib/expo-types";
 import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
@@ -227,6 +227,7 @@ function ExpoFooter({
           </div>
           <div className="legal reveal-up in" style={{ transitionDelay: ".22s" }}>
             <span>{homepage.legalLeft}</span>
+            <span><LegalFooterLinks /></span>
             <span>{homepage.legalRight}</span>
           </div>
         </div>
@@ -245,20 +246,58 @@ function ExhibitorsPanel({
   exhibitorsData: Exhibitor[];
 }) {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<"all" | Exhibitor["category"]>("all");
+  const [boothQuery, setBoothQuery] = useState("");
   const [country, setCountry] = useState<"all" | Exhibitor["countryFilter"]>("all");
+  const [filtered, setFiltered] = useState(exhibitorsData);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
-  const filtered = useMemo(() => {
-    const lowered = query.trim().toLowerCase();
-    return exhibitorsData.filter((item) => {
-      const categoryMatch = category === "all" || item.category === category;
-      const countryMatch = country === "all" || item.countryFilter === country;
-      const textMatch =
-        !lowered ||
-        `${item.name} ${item.business} ${item.cardDescription}`.toLowerCase().includes(lowered);
-      return categoryMatch && countryMatch && textMatch;
-    });
-  }, [query, category, country, exhibitorsData]);
+  useEffect(() => {
+    if (!active) return;
+
+    const controller = new AbortController();
+    const params = new URLSearchParams();
+
+    if (query.trim()) params.set("q", query.trim());
+    if (boothQuery.trim()) params.set("booth", boothQuery.trim());
+    if (country !== "all") params.set("country", country);
+
+    const timeoutId = window.setTimeout(async () => {
+      setIsLoading(true);
+
+      try {
+        const response = await fetch(`/api/exhibitors${params.toString() ? `?${params.toString()}` : ""}`, {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+
+        const result = (await response.json()) as {
+          ok: boolean;
+          exhibitors?: Exhibitor[];
+          error?: string;
+        };
+
+        if (!response.ok || !result.ok || !result.exhibitors) {
+          throw new Error(result.error ?? "Unable to load exhibitors.");
+        }
+
+        setFiltered(result.exhibitors);
+        setLoadError("");
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setLoadError(error instanceof Error ? error.message : "Unable to load exhibitors.");
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [active, boothQuery, country, query]);
 
   return (
     <div className={`panel${active ? " active" : ""}`} id="panel-exhibitors" style={{ display: active ? "block" : "none" }}>
@@ -272,22 +311,29 @@ function ExhibitorsPanel({
         <div className="exhibitor-tools">
           <label className="exhibitor-filter exhibitor-search">
             <span>Search</span>
+            <small>Keywords: company, product or service</small>
             <div className="exhibitor-control">
               <Search aria-hidden="true" />
-              <input value={query} onChange={(e) => setQuery(e.target.value)} type="search" placeholder="Company or sector" autoComplete="off" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                type="search"
+                placeholder="Search exhibitors"
+                autoComplete="off"
+              />
             </div>
           </label>
           <label className="exhibitor-filter">
-            <span>Category</span>
+            <span>Booth Number</span>
             <div className="exhibitor-control">
-              <Layers3 aria-hidden="true" />
-              <select value={category} onChange={(e) => setCategory(e.target.value as typeof category)}>
-                <option value="all">All categories</option>
-                <option value="machinery">Machinery</option>
-                <option value="technology">Technology</option>
-                <option value="produce">Produce</option>
-                <option value="health">Animal Health</option>
-              </select>
+              <MapPin aria-hidden="true" />
+              <input
+                value={boothQuery}
+                onChange={(e) => setBoothQuery(e.target.value)}
+                type="search"
+                placeholder="e.g. A47"
+                autoComplete="off"
+              />
             </div>
           </label>
           <label className="exhibitor-filter">
@@ -307,7 +353,7 @@ function ExhibitorsPanel({
             type="button"
             onClick={() => {
               setQuery("");
-              setCategory("all");
+              setBoothQuery("");
               setCountry("all");
             }}
           >
@@ -316,7 +362,7 @@ function ExhibitorsPanel({
         </div>
 
         <div className="exhibitor-results" aria-live="polite">
-          {filtered.length} exhibitor{filtered.length === 1 ? "" : "s"}
+          {isLoading ? "Searching exhibitors..." : `${filtered.length} exhibitor${filtered.length === 1 ? "" : "s"}`}
         </div>
 
         <div className="exhibitor-grid">
@@ -339,7 +385,8 @@ function ExhibitorsPanel({
           ))}
         </div>
 
-        {filtered.length === 0 ? <p className="exhibitor-empty">No exhibitors match your search.</p> : null}
+        {loadError ? <p className="exhibitor-empty">{loadError}</p> : null}
+        {!loadError && filtered.length === 0 ? <p className="exhibitor-empty">No exhibitors match your search.</p> : null}
 
         <div className="section-sep" />
         <div className="cta-row">
@@ -396,7 +443,7 @@ function SupportUnitsPanel({
       <div className="section-sep" />
       <div className="cta-row reveal in">
         <a className="btn btn-accent" href="#">
-          Become a Support Unit
+          Become a Supporaat Unit
         </a>
         <a className="btn btn-ghost" href="#">
           Media Accreditation

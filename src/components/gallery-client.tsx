@@ -19,6 +19,7 @@ import {
   Youtube,
 } from "lucide-react";
 import { PageBodyClass } from "@/src/components/page-body-class";
+import { LegalFooterLinks } from "@/src/components/legal-links";
 import type { GallerySnapshotItem } from "@/src/lib/gallery-cms";
 import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
@@ -408,6 +409,7 @@ export default function GalleryClient({
           </div>
           <div className="legal">
             <span>{homepage.legalLeft}</span>
+            <span><LegalFooterLinks /></span>
             <span>{homepage.legalRight}</span>
           </div>
         </div>

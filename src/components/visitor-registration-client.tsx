@@ -394,8 +394,10 @@ export function VisitorRegistrationClient({
                 <label className="register-consent">
                   <input type="checkbox" name="consent" required />
                   <span>
-                    By submitting this form, you agree to Agri Africa&apos;s Privacy Policy and Terms
-                    and Conditions, and consent to receiving communications, updates,
+                    By submitting this form, you agree to Agri Africa&apos;s{" "}
+                    <Link href="/privacy-policy">Privacy Policy</Link> and{" "}
+                    <Link href="/terms-and-conditions">Terms and Conditions</Link>,
+                    and consent to receiving communications, updates,
                     opportunities, and invitations related to the purpose for which your
                     information is being collected. <span className="required-mark">*</span>
                   </span>

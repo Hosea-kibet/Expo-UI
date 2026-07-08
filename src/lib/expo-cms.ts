@@ -5,7 +5,7 @@ import {
   getSupportUnitsContent,
 } from "@/src/lib/strapi-content";
 import { normalizeStrapiAssetUrl } from "@/src/lib/strapi-media";
-import type { Exhibitor, SupportUnit } from "@/src/lib/expo-types";
+import type { Exhibitor, ExhibitorCountryFilter, SupportUnit } from "@/src/lib/expo-types";
 
 type ExpoPageSnapshot = {
   dates: string;
@@ -41,6 +41,12 @@ export type ExpoCmsSnapshot = {
   exhibitors: Exhibitor[];
   supportUnits: SupportUnit[];
   programmeDays: ProgrammeDay[];
+};
+
+export type ExhibitorSearchParams = {
+  query?: string;
+  booth?: string;
+  country?: "all" | ExhibitorCountryFilter;
 };
 
 function normalizeAssetUrl(value?: string | null) {
@@ -85,7 +91,7 @@ function extractMediaUrl(media: unknown) {
   return undefined;
 }
 
-function normalizeExhibitor(record: Record<string, unknown>): Exhibitor | null {
+export function normalizeExhibitor(record: Record<string, unknown>): Exhibitor | null {
   if (typeof record.slug !== "string" || typeof record.name !== "string") return null;
 
   return {
@@ -352,4 +358,37 @@ export async function getExpoCmsSnapshot(): Promise<ExpoCmsSnapshot> {
 export async function getExpoExhibitorBySlug(slug: string) {
   const snapshot = await getExpoCmsSnapshot();
   return snapshot.exhibitors.find((item) => item.slug === slug) ?? null;
+}
+
+export async function getFilteredExhibitors({
+  query,
+  booth,
+  country = "all",
+}: ExhibitorSearchParams = {}): Promise<Exhibitor[]> {
+  const params: Record<string, string> = {};
+  const trimmedQuery = query?.trim();
+  const trimmedBooth = booth?.trim();
+
+  if (trimmedQuery) {
+    params["filters[$or][0][name][$containsi]"] = trimmedQuery;
+    params["filters[$or][1][business][$containsi]"] = trimmedQuery;
+    params["filters[$or][2][cardDescription][$containsi]"] = trimmedQuery;
+    params["filters[$or][3][intro][$containsi]"] = trimmedQuery;
+  }
+
+  if (trimmedBooth) {
+    params["filters[booth][$containsi]"] = trimmedBooth;
+  }
+
+  if (country !== "all") {
+    params["filters[countryFilter][$eq]"] = country;
+  }
+
+  const exhibitorsResponse = await getExhibitorsContent(params);
+
+  return Array.isArray(exhibitorsResponse.data)
+    ? exhibitorsResponse.data
+        .map((item) => normalizeExhibitor(item as Record<string, unknown>))
+        .filter((item): item is Exhibitor => item !== null)
+    : [];
 }

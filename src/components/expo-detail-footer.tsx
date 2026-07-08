@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CalendarDays, Facebook, Instagram, Linkedin, MapPin, Mail, Phone, Youtube } from "lucide-react";
+import { LegalFooterLinks } from "@/src/components/legal-links";
 import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
 export function ExpoFooter({ homepage }: { homepage: HomepageSnapshot }) {
@@ -71,6 +72,7 @@ export function ExpoFooter({ homepage }: { homepage: HomepageSnapshot }) {
           </div>
           <div className="legal reveal-up in" style={{ transitionDelay: ".22s" }}>
             <span>{homepage.legalLeft}</span>
+            <span><LegalFooterLinks /></span>
             <span>{homepage.legalRight}</span>
           </div>
         </div>
