@@ -4317,9 +4317,17 @@ footer.site .ptn-link {
   font-weight: 650;
 }
 
+.company-intro-section {
+  margin: 34px 0;
+}
+
+.company-intro-section .eyebrow {
+  margin: 0 0 12px;
+}
+
 .company-intro {
   max-width: 780px;
-  margin: 34px 0;
+  margin: 0;
   font-size: 17px;
   line-height: 1.65;
   color: var(--fg2);

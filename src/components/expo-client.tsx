@@ -89,7 +89,10 @@ function ExhibitorDetailPanel({
           </div>
         </div>
       </div>
-      <p className="company-intro">{exhibitor.intro}</p>
+      <section className="company-intro-section" aria-labelledby="brief-intro-title">
+        <h2 className="eyebrow" id="brief-intro-title">Brief intro</h2>
+        <p className="company-intro">{exhibitor.intro}</p>
+      </section>
       <div className="company-offerings" id="detail-offerings">
         <section className="offering-column" hidden={exhibitor.products.length === 0}>
           <div className="eyebrow">Products</div>
