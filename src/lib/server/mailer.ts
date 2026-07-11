@@ -83,10 +83,12 @@ export async function sendRegistrationOtpEmail({
 export async function sendRegistrationConfirmationEmail({
   email,
   firstName,
+  lastName,
   registrationReference,
 }: {
   email: string;
   firstName: string;
+  lastName: string;
   registrationReference: string;
 }) {
   const { config, transporter } = createMailerTransport();
@@ -103,20 +105,43 @@ export async function sendRegistrationConfirmationEmail({
 
   const qrCodeBase64 = qrCodeDataUrl.replace(/^data:image\/png;base64,/, "");
   const safeFirstName = escapeHtml(firstName || "there");
+  const safeLastName = escapeHtml(lastName || "");
+  const safeFullName = `${safeFirstName} ${safeLastName}`.trim();
   const safeReference = escapeHtml(registrationReference);
 
   await transporter.sendMail({
     from: config.from,
     to: email,
-    subject: "Your Agri Africa registration QR code",
+    subject: "Your 2026 AIAE Visitor Pass",
     text: [
-      `Hi ${firstName || "there"},`,
+      "YOUR VISITOR PASS",
       "",
-      "Your Agri Africa registration is confirmed.",
-      `Registration reference: ${registrationReference}`,
+      `Dear ${[firstName, lastName].filter(Boolean).join(" ") || "Visitor"},`,
       "",
-      "A QR code for your registration reference is included in this email for easy check-in.",
-      "Please keep this email handy for event entry updates.",
+      "Thank you for registering to attend the 2026 Africa International Agricultural Expo (AIAE).",
+      "We are pleased to confirm your registration and look forward to welcoming you to Africa's premier agricultural trade exhibition.",
+      "",
+      `Reference ID: ${registrationReference}`,
+      "Your QR code is attached to this email.",
+      "",
+      "EVENT DETAILS",
+      "Theme: Gathering Global Agricultural Wisdom to Promote Modernization of African Agriculture",
+      "Dates: 23–25 October 2026",
+      "Venue: Kenyatta International Convention Centre (KICC), Nairobi, Kenya",
+      "",
+      "ENTRY INSTRUCTIONS",
+      "Your Visitor Pass consists of the QR Code and Reference ID shown above.",
+      "Upon arrival at the venue, present either your QR Code for quick scanning or your Reference ID for manual verification if required.",
+      "You may present your pass on your mobile phone or as a printed copy.",
+      "",
+      "We look forward to welcoming you to the 2026 AIAE and wish you a rewarding and enjoyable experience.",
+      "If you require any assistance before the event, please contact the Secretariat.",
+      "",
+      "Kind regards,",
+      "Agri-Africa Exhibition Limited",
+      "www.agriexpo.africa",
+      "info@agriexpo.africa",
+      "+254 710883625",
     ].join("\n"),
     attachments: [
       {
@@ -127,32 +152,51 @@ export async function sendRegistrationConfirmationEmail({
       },
     ],
     html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#173422;background:#f4efe4;padding:32px">
-        <div style="max-width:560px;margin:0 auto;background:#fffdf8;border-radius:20px;padding:32px;text-align:center">
-          <p style="margin:0 0 12px;font-size:14px;letter-spacing:0.12em;text-transform:uppercase;color:#e26f2d">
-            Registration complete
-          </p>
-          <h1 style="margin:0 0 16px;font-size:36px;line-height:1.1;color:#173422">You're on the guest list.</h1>
-          <p style="margin:0 0 20px;font-size:18px;color:#425466">
-            Hi ${safeFirstName}, your Agri Africa registration has been confirmed.
-          </p>
-          <p style="margin:0 0 24px;font-size:16px;color:#425466">
-            Present this QR code at check-in, or use the registration reference below.
-          </p>
-          <img
-            src="cid:registration-qr-code"
-            alt="QR code for registration reference ${safeReference}"
-            width="220"
-            height="220"
-            style="display:block;margin:0 auto 24px;border-radius:16px;background:#f4efe4;padding:14px"
-          />
-          <div style="margin:0 auto 24px;max-width:320px;border:1px dashed #d4c8a5;border-radius:14px;padding:16px;background:#f9f4e8">
-            <div style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#8a7e5f">Registration reference</div>
-            <div style="margin-top:8px;font-size:28px;font-weight:700;color:#173422">${safeReference}</div>
+      <div style="margin:0;background:#f4efe4;padding:24px 12px;font-family:Arial,sans-serif;line-height:1.6;color:#173422">
+        <div style="max-width:680px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden">
+          <div style="background:#173422;padding:28px 32px;border-bottom:6px solid #e26f2d;color:#ffffff">
+            <div style="font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#f2a36f">Visitor Pass</div>
+            <div style="margin-top:8px;font-size:28px;font-weight:700;line-height:1.25">2026 Africa International Agricultural Expo (AIAE)</div>
           </div>
-          <p style="margin:0;font-size:14px;color:#6b7280">
-            Keep this email handy. Event updates and entry details will be shared closer to the expo.
-          </p>
+
+          <div style="padding:32px">
+            <h1 style="margin:0 0 22px;font-size:30px;line-height:1.2;color:#173422">YOUR VISITOR PASS</h1>
+
+            <div style="margin-bottom:28px;padding:22px;text-align:center;border:1px solid #d8dfd9;border-radius:12px;background:#f9fbf9">
+              <img src="cid:registration-qr-code" alt="QR code for reference ${safeReference}" width="220" height="220" style="display:block;margin:0 auto 16px;max-width:100%;height:auto" />
+              <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#64736a">Reference ID</div>
+              <div style="margin-top:4px;font-size:28px;font-weight:700;letter-spacing:.08em;color:#173422">${safeReference}</div>
+            </div>
+
+            <p style="margin:0 0 18px;font-size:18px">Dear <strong>${safeFullName}</strong>,</p>
+            <p style="margin:0 0 16px">Thank you for registering to attend the <strong>2026 Africa International Agricultural Expo (AIAE).</strong></p>
+            <p style="margin:0 0 26px">We are pleased to confirm your registration and look forward to welcoming you to Africa's premier agricultural trade exhibition.</p>
+
+            <h2 style="margin:0 0 16px;font-size:22px;color:#173422">Event Details</h2>
+            <p style="margin:0 0 16px"><strong>Theme</strong><br /><em>Gathering Global Agricultural Wisdom to Promote Modernization of African Agriculture</em></p>
+            <p style="margin:0 0 16px"><strong>Dates</strong><br /><strong>23–25 October 2026</strong></p>
+            <p style="margin:0 0 26px"><strong>Venue</strong><br /><strong>Kenyatta International Convention Centre (KICC), Nairobi, Kenya</strong></p>
+
+            <h2 style="margin:0 0 16px;font-size:22px;color:#173422">Entry Instructions</h2>
+            <p style="margin:0 0 14px">Your <strong>Visitor Pass</strong> consists of the <strong>QR Code</strong> and <strong>Reference ID</strong> shown above.</p>
+            <p style="margin:0 0 8px">Upon arrival at the venue, simply present either:</p>
+            <ul style="margin:0 0 18px;padding-left:24px">
+              <li style="margin-bottom:8px">Your <strong>QR Code</strong> for quick scanning; or</li>
+              <li>Your <strong>Reference ID</strong> for manual verification if required.</li>
+            </ul>
+            <p style="margin:0 0 16px">You may present your pass on your mobile phone or as a printed copy.</p>
+            <p style="margin:0 0 16px">We look forward to welcoming you to the 2026 AIAE and wish you a rewarding and enjoyable experience.</p>
+            <p style="margin:0 0 22px">If you require any assistance before the event, please contact the Secretariat.</p>
+
+            <p style="margin:0 0 4px">Kind regards,</p>
+            <p style="margin:0 0 18px"><strong>Agri-Africa Exhibition Limited</strong></p>
+            <p style="margin:0;color:#425466">
+              🌐 <a href="https://www.agriexpo.africa" style="color:#147b9e">www.agriexpo.africa</a><br />
+              ✉ <a href="mailto:info@agriexpo.africa" style="color:#147b9e">info@agriexpo.africa</a><br />
+              ☎ <a href="tel:+254710883625" style="color:#147b9e">+254 710883625</a>
+            </p>
+            <p style="margin:24px 0 0;font-style:italic;color:#425466">Gathering Global Agricultural Wisdom to Promote Modernization of African Agriculture.</p>
+          </div>
         </div>
       </div>
     `,

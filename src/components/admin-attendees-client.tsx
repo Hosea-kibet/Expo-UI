@@ -494,7 +494,7 @@ export function AdminAttendeesClient({
               <input
                 value={scanValue}
                 onChange={handleScanValueChange}
-                placeholder="AIAE26-ABC123"
+                placeholder="V001A"
                 required
               />
             </label>

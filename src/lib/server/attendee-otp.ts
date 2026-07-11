@@ -4,6 +4,7 @@ import {
   sendRegistrationConfirmationEmail,
   sendRegistrationOtpEmail,
 } from "@/src/lib/server/mailer";
+import { sendAttendeeRegistrationMessages } from "@/src/lib/server/attendee-messaging";
 import {
   attendeePayloadFromRegistration,
   createAttendee,
@@ -14,10 +15,6 @@ import {
 const OTP_EXPIRY_MINUTES = 10;
 const OTP_RESEND_COOLDOWN_SECONDS = 60;
 const OTP_MAX_ATTEMPTS = 5;
-
-function buildReference() {
-  return `AIAE26-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-}
 
 function addMinutes(date: Date, minutes: number) {
   return new Date(date.getTime() + minutes * 60 * 1000);
@@ -70,7 +67,6 @@ export async function requestAttendeeOtp(registration: PendingRegistration) {
     : await createAttendee(
         attendeePayloadFromRegistration(registration, {
           ...otpData,
-          registrationReference: buildReference(),
           registeredAt: now.toISOString(),
         }),
       );
@@ -135,8 +131,10 @@ export async function verifyAttendeeOtp(email: string, otp: string) {
   await sendRegistrationConfirmationEmail({
     email: verifiedAttendee.email,
     firstName: verifiedAttendee.firstName,
+    lastName: verifiedAttendee.lastName,
     registrationReference: verifiedAttendee.registrationReference,
   });
+  await sendAttendeeRegistrationMessages(verifiedAttendee);
 
   return verifiedAttendee;
 }
