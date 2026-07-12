@@ -63,8 +63,12 @@ export async function POST(request: NextRequest) {
 
     const recipients = new Map<string, AttendeeRecord>();
     attendees.forEach((attendee) => {
-      const address = attendeeWhatsAppAddress(attendee);
-      if (address) recipients.set(address, attendee);
+      try {
+        const address = attendeeWhatsAppAddress(attendee);
+        recipients.set(address, attendee);
+      } catch {
+        // Invalid attendee phone numbers are excluded from bulk sends.
+      }
     });
 
     if (recipients.size === 0) {

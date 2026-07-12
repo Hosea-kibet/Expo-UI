@@ -1,5 +1,6 @@
 import QRCode from "qrcode";
 import sharp from "sharp";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import type { AttendeeRecord } from "@/src/lib/server/strapi-admin";
 import { attendeeSmsAddress, sendBelioSms } from "@/src/lib/server/belio-sms";
 
@@ -23,13 +24,22 @@ function escapeXml(value: string) {
 }
 
 export function attendeeWhatsAppAddress(attendee: RegistrationAttendee) {
-  const fullPhone = String(attendee.fullPhoneNumber ?? "").replace(/\D/g, "");
-
-  if (fullPhone) return fullPhone;
-
   const countryCode = String(attendee.countryCode ?? "").replace(/\D/g, "");
   const localPhone = String(attendee.phone ?? "").replace(/\D/g, "").replace(/^0/, "");
-  return `${countryCode}${localPhone}`;
+  const storedFullPhone = String(attendee.fullPhoneNumber ?? "").replace(/\D/g, "");
+  const internationalCandidate = countryCode && localPhone
+    ? `+${countryCode}${localPhone}`
+    : storedFullPhone
+      ? `+${storedFullPhone.replace(/^00/, "")}`
+      : "";
+  const parsedPhone = parsePhoneNumberFromString(internationalCandidate);
+
+  if (!parsedPhone?.isValid()) {
+    throw new Error("The attendee phone number is not a valid international WhatsApp number.");
+  }
+
+  // Meta Cloud API expects country code + national number, with digits only and no leading plus.
+  return parsedPhone.number.slice(1);
 }
 
 function getWhatsAppConfig() {

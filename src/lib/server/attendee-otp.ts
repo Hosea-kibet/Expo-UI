@@ -4,7 +4,10 @@ import {
   sendRegistrationConfirmationEmail,
   sendRegistrationOtpEmail,
 } from "@/src/lib/server/mailer";
-import { sendAttendeeRegistrationMessages } from "@/src/lib/server/attendee-messaging";
+import {
+  sendRegistrationSms,
+  sendRegistrationWhatsApp,
+} from "@/src/lib/server/attendee-messaging";
 import {
   attendeePayloadFromRegistration,
   createAttendee,
@@ -128,13 +131,23 @@ export async function verifyAttendeeOtp(email: string, otp: string) {
     otpAttemptCount: currentAttempts + 1,
   });
 
-  await sendRegistrationConfirmationEmail({
-    email: verifiedAttendee.email,
-    firstName: verifiedAttendee.firstName,
-    lastName: verifiedAttendee.lastName,
-    registrationReference: verifiedAttendee.registrationReference,
+  const notificationResults = await Promise.allSettled([
+    sendRegistrationConfirmationEmail({
+      email: verifiedAttendee.email,
+      firstName: verifiedAttendee.firstName,
+      lastName: verifiedAttendee.lastName,
+      registrationReference: verifiedAttendee.registrationReference,
+    }),
+    sendRegistrationSms(verifiedAttendee),
+    sendRegistrationWhatsApp(verifiedAttendee),
+  ]);
+
+  const channels = ["Email", "SMS", "WhatsApp"];
+  notificationResults.forEach((result, index) => {
+    if (result.status === "rejected") {
+      console.error(`${channels[index]} registration notification failed:`, result.reason);
+    }
   });
-  await sendAttendeeRegistrationMessages(verifiedAttendee);
 
   return verifiedAttendee;
 }
