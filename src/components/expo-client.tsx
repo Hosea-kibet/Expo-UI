@@ -69,9 +69,10 @@ function ExhibitorDetailPanel({
 }) {
   if (!exhibitor) return null;
 
-  const brochureHref = `data:text/plain;charset=utf-8,${encodeURIComponent(
+  const fallbackBrochureHref = `data:text/plain;charset=utf-8,${encodeURIComponent(
     `${exhibitor.name}\n${exhibitor.booth}\n\n${exhibitor.intro}\n\nContact: ${exhibitor.contact}\n${exhibitor.phone}\n${exhibitor.email}`,
   )}`;
+  const brochureHref = exhibitor.brochureUrl || fallbackBrochureHref;
 
   return (
     <div className={`panel${active ? " active" : ""}`} id="panel-exhibitor-detail" style={{ display: active ? "block" : "none" }}>
@@ -81,7 +82,9 @@ function ExhibitorDetailPanel({
           <strong>{exhibitor.booth.replace(/^Booth\s*/i, "")}</strong>
         </div>
         <div className="company-identity">
-          <div className="company-logo" aria-hidden="true">{exhibitor.logo}</div>
+          <div className="company-logo" aria-hidden="true">
+            {exhibitor.logoSrc ? <img src={exhibitor.logoSrc} alt="" /> : exhibitor.logo}
+          </div>
           <h1>{exhibitor.name}</h1>
           <div className="company-meta">
             <div><span>Country</span><strong>{exhibitor.country}</strong></div>
@@ -382,7 +385,6 @@ function ExhibitorsPanel({
               <span className="booth-badge">{item.booth}</span>
               <div className="ex-name">{item.name}</div>
               <div className="ex-origin">{item.origin}</div>
-              <div className="ex-desc">{item.cardDescription}</div>
               <span className="ex-link">View Details →</span>
             </a>
           ))}

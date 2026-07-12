@@ -96,16 +96,21 @@ export function normalizeExhibitor(record: Record<string, unknown>): Exhibitor |
 
   return {
     slug: record.slug,
-    logo: typeof record.logo === "string" ? record.logo : "",
+    logo:
+      typeof record.logo === "string"
+        ? record.logo
+        : record.name
+            .split(/\s+/)
+            .map((part) => part[0])
+            .join("")
+            .slice(0, 3)
+            .toUpperCase(),
+    logoSrc: extractMediaUrl(record.logo) ?? "",
     booth: typeof record.booth === "string" ? record.booth : "",
     name: record.name,
     country: typeof record.country === "string" ? record.country : "",
     countryFilter:
-      record.countryFilter === "china" ||
-      record.countryFilter === "kenya" ||
-      record.countryFilter === "africa"
-        ? record.countryFilter
-        : "africa",
+      record.country === "China" ? "china" : record.country === "Kenya" ? "kenya" : "africa",
     origin:
       typeof record.origin === "string" && record.origin.length > 0
         ? record.origin.startsWith("🇨🇳") ||
@@ -126,19 +131,25 @@ export function normalizeExhibitor(record: Record<string, unknown>): Exhibitor |
         ? record.category
         : "machinery",
     business: typeof record.business === "string" ? record.business : "",
-    cardDescription:
-      typeof record.cardDescription === "string" ? record.cardDescription : "",
     intro: typeof record.intro === "string" ? record.intro : "",
-    products: Array.isArray(record.products)
-      ? record.products.filter((item): item is string => typeof item === "string")
-      : [],
-    services: Array.isArray(record.services)
-      ? record.services.filter((item): item is string => typeof item === "string")
-      : [],
+    products: normalizeListItems(record.products),
+    services: normalizeListItems(record.services),
     contact: typeof record.contact === "string" ? record.contact : "",
     phone: typeof record.phone === "string" ? record.phone : "",
     email: typeof record.email === "string" ? record.email : "",
+    brochureUrl: extractMediaUrl(record.brochure) ?? "",
   };
+}
+
+function normalizeListItems(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((item) => {
+    if (typeof item === "string") return item.trim() ? [item.trim()] : [];
+    if (!item || typeof item !== "object") return [];
+    const entry = (item as { value?: unknown }).value;
+    return typeof entry === "string" && entry.trim() ? [entry.trim()] : [];
+  });
 }
 
 function normalizeSupportUnit(record: Record<string, unknown>): SupportUnit | null {
@@ -372,8 +383,7 @@ export async function getFilteredExhibitors({
   if (trimmedQuery) {
     params["filters[$or][0][name][$containsi]"] = trimmedQuery;
     params["filters[$or][1][business][$containsi]"] = trimmedQuery;
-    params["filters[$or][2][cardDescription][$containsi]"] = trimmedQuery;
-    params["filters[$or][3][intro][$containsi]"] = trimmedQuery;
+    params["filters[$or][2][intro][$containsi]"] = trimmedQuery;
   }
 
   if (trimmedBooth) {

@@ -71,20 +71,20 @@ export type ExpoPageContent = {
 export type ExhibitorContent = {
   name: string;
   slug: string;
-  logo?: string;
+  logo?: unknown;
   booth?: string;
   country?: string;
   countryFilter?: "china" | "kenya" | "africa";
   origin?: string;
   category?: "machinery" | "technology" | "produce" | "health";
   business?: string;
-  cardDescription?: string;
   intro?: string;
-  products?: string[];
-  services?: string[];
+  products?: Array<string | { value?: string }>;
+  services?: Array<string | { value?: string }>;
   contact?: string;
   phone?: string;
   email?: string;
+  brochure?: unknown;
 };
 
 export type SupportUnitContent = {

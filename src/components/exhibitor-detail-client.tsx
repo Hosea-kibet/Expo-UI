@@ -210,7 +210,9 @@ export function ExhibitorDetailClient({
                   <strong>{exhibitor.booth.replace(/^Booth\s*/i, "")}</strong>
                 </div>
                 <div className="company-identity">
-                  <div className="company-logo" aria-hidden="true">{exhibitor.logo}</div>
+                  <div className="company-logo" aria-hidden="true">
+                    {exhibitor.logoSrc ? <img src={exhibitor.logoSrc} alt="" /> : exhibitor.logo}
+                  </div>
                   <h1>{exhibitor.name}</h1>
                   <div className="company-meta">
                     <div><span>Country</span><strong>{exhibitor.country}</strong></div>

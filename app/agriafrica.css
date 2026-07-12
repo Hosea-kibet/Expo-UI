@@ -4278,6 +4278,13 @@ footer.site .ptn-link {
   box-shadow: 0 12px 28px -24px rgba(33, 26, 18, .75);
 }
 
+.company-logo img {
+  display: block;
+  width: 100%;
+  height: 64px;
+  object-fit: contain;
+}
+
 .exhibitor-detail-head h1 {
   margin: 16px 0 14px;
   max-width: 680px;
