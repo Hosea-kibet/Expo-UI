@@ -467,6 +467,8 @@ function FloorPlanPanel({
   floorPlanUrl: string;
   venue: string;
 }) {
+  const isPdf = /\.pdf(?:[?#]|$)/i.test(floorPlanUrl);
+
   return (
     <div className={`panel${active ? " active" : ""}`} id="panel-floorplan" style={{ display: active ? "block" : "none" }}>
       <div id="floorplan" className="panel-anchor" aria-hidden="true" />
@@ -482,18 +484,37 @@ function FloorPlanPanel({
         <div className="floor-meta-item"><span className="k">Zones</span><span className="v">5 Thematic</span></div>
       </div>
       <figure className="floor-plan-image reveal in">
-        <img src={floorPlanUrl} alt="Top-down visual of the 2026 - AIAE exhibition hall layout" />
+        {isPdf ? (
+          <object
+            className="floor-plan-document"
+            data={floorPlanUrl}
+            type="application/pdf"
+            aria-label="2026 AIAE exhibition floor plan PDF"
+          >
+            <p>
+              This browser cannot display the floor plan PDF. {" "}
+              <a href={floorPlanUrl} target="_blank" rel="noreferrer">
+                Open the two-page floor plan
+              </a>
+              .
+            </p>
+          </object>
+        ) : (
+          <img src={floorPlanUrl} alt="Top-down visual of the 2026 AIAE exhibition hall layout" />
+        )}
         <figcaption>
-          <span>Illustrative hall layout</span>
-          Final booth allocations will be shared with registered exhibitors and visitors.
+          <span>{isPdf ? "Two-page floor plan" : "Illustrative hall layout"}</span>
+          {isPdf
+            ? "Scroll inside the document to view both pages, or open it using the button below."
+            : "Final booth allocations will be shared with registered exhibitors and visitors."}
         </figcaption>
       </figure>
       <div className="cta-row reveal in">
         <a className="btn btn-accent" href="#">
           Request a Booth
         </a>
-        <a className="btn btn-ghost" href={floorPlanUrl} download>
-          <Download /> Download Floor Plan
+        <a className="btn btn-ghost" href={floorPlanUrl} target="_blank" rel="noreferrer">
+          <Download /> {isPdf ? "Open Floor Plan PDF" : "Download Floor Plan"}
         </a>
       </div>
     </div>

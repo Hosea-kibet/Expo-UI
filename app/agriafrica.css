@@ -1184,6 +1184,9 @@ p, .body { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 
   .legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
   .floor-plan-image{margin:0 0 32px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;box-shadow:0 20px 44px -34px rgba(33,26,18,.55)}
   .floor-plan-image img{width:100%;aspect-ratio:16/10;object-fit:cover;display:block}
+  .floor-plan-document{width:100%;height:clamp(620px,78vw,980px);border:0;display:block;background:#f3f1eb}
+  .floor-plan-document p{margin:0;padding:32px;text-align:center;color:var(--fg2)}
+  .floor-plan-document a{color:var(--leaf-600);font-weight:700;text-decoration:underline}
   .floor-plan-image figcaption{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:14px 16px;border-top:1px solid var(--line);font-size:11px;line-height:1.4;color:var(--fg3)}
   .floor-plan-image figcaption span{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--leaf-600);white-space:nowrap}
 
@@ -1268,6 +1271,7 @@ p, .body { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 
     .zone-a{grid-row:auto}
     .zone-d{grid-column:auto}
     .floor-plan-image figcaption{align-items:flex-start;flex-direction:column;gap:5px}
+    .floor-plan-document{height:72vh;min-height:520px}
     .expo-category-set{gap:16px;padding-right:16px}
     .expo-category-set span{font-size:20px}
     .visitor-cta-wrap{padding:28px 24px}
