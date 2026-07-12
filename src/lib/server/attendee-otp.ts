@@ -145,7 +145,10 @@ export async function verifyAttendeeOtp(email: string, otp: string) {
   const channels = ["Email", "SMS", "WhatsApp"];
   notificationResults.forEach((result, index) => {
     if (result.status === "rejected") {
-      console.error(`${channels[index]} registration notification failed:`, result.reason);
+      const message = result.reason instanceof Error ? result.reason.message : String(result.reason);
+      console.error(`[registration] ${channels[index]} failed independently: ${message}`);
+    } else {
+      console.info(`[registration] ${channels[index]} sent successfully.`);
     }
   });
 
