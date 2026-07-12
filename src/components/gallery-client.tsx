@@ -23,6 +23,8 @@ import { LegalFooterLinks } from "@/src/components/legal-links";
 import type { GallerySnapshotItem } from "@/src/lib/gallery-cms";
 import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
+const galleryYears = ["2026", "2025", "2023"] as const;
+
 function getSocialIcon(platform: HomepageSnapshot["socialLinks"][number]["platform"]) {
   switch (platform) {
     case "facebook":
@@ -48,11 +50,6 @@ export default function GalleryClient({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-
-  const years = useMemo(
-    () => Array.from(new Set(items.map((item) => item.year))),
-    [items],
-  );
 
   const visibleItems = useMemo(
     () =>
@@ -228,7 +225,7 @@ export default function GalleryClient({
           <div className="wrap">
             <div className="eyebrow">Agri Africa media archive</div>
             <h1 className="hero-title">Past Events Gallery</h1>
-            <p>Moments, conversations, and agricultural connections from Agri Africa&apos;s 2024 and 2025 events.</p>
+            <p>Moments, conversations, and agricultural connections from past Agri Africa events.</p>
           </div>
         </section>
 
@@ -252,7 +249,7 @@ export default function GalleryClient({
               >
                 All years
               </button>
-              {years.map((year) => (
+              {galleryYears.map((year) => (
                 <button
                   key={year}
                   className={`gallery-filter${yearFilter === year ? " active" : ""}`}

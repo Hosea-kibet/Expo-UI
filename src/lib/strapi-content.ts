@@ -114,7 +114,7 @@ export type ProgrammeDayContent = {
 
 export type GalleryItemContent = {
   title: string;
-  slug: string;
+  slug?: string;
   year: number;
   mediaType: "image" | "video";
   caption?: string;
