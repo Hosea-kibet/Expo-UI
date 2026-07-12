@@ -22,7 +22,7 @@ function escapeXml(value: string) {
     .replaceAll("'", "&apos;");
 }
 
-function whatsappAddress(attendee: RegistrationAttendee) {
+export function attendeeWhatsAppAddress(attendee: RegistrationAttendee) {
   const fullPhone = String(attendee.fullPhoneNumber ?? "").replace(/\D/g, "");
 
   if (fullPhone) return fullPhone;
@@ -154,7 +154,7 @@ async function uploadWhatsAppMedia(image: Buffer, filename: string) {
 
 export async function sendRegistrationWhatsApp(attendee: RegistrationAttendee) {
   const config = getWhatsAppConfig();
-  const recipient = whatsappAddress(attendee);
+  const recipient = attendeeWhatsAppAddress(attendee);
 
   if (!recipient) throw new Error("A valid attendee phone number is required for WhatsApp.");
 
@@ -172,6 +172,31 @@ export async function sendRegistrationWhatsApp(attendee: RegistrationAttendee) {
       to: recipient,
       type: "image",
       image: { id: mediaId, caption: registrationWhatsAppCaption(attendee) },
+    }),
+    cache: "no-store",
+  });
+
+  return parseMetaResponse(response);
+}
+
+export async function sendWhatsAppText(message: string, recipient: string) {
+  const config = getWhatsAppConfig();
+  const normalizedRecipient = recipient.replace(/\D/g, "");
+
+  if (!normalizedRecipient) throw new Error("A valid WhatsApp recipient is required.");
+
+  const response = await fetch(`${config.baseUrl}/${config.phoneNumberId}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: normalizedRecipient,
+      type: "text",
+      text: { preview_url: false, body: message },
     }),
     cache: "no-store",
   });

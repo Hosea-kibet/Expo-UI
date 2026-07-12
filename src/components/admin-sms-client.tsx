@@ -28,17 +28,20 @@ function attendeeName(attendee: AttendeeRecord) {
   return `${attendee.firstName} ${attendee.lastName}`.trim();
 }
 
-export function AdminSmsClient({
+export function AdminMessagingClient({
   initialAttendees,
   totalAttendees,
   adminName,
   initialError,
+  channel,
 }: {
   initialAttendees: AttendeeRecord[];
   totalAttendees: number;
   adminName: string;
   initialError: string;
+  channel: "SMS" | "WhatsApp";
 }) {
+  const endpoint = channel === "SMS" ? "/api/admin/sms" : "/api/admin/whatsapp";
   const [mode, setMode] = useState<SendMode>("all");
   const [message, setMessage] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -121,11 +124,11 @@ export function AdminSmsClient({
     setIsSending(true);
     setAlert({
       type: "info",
-      message: mode === "all" ? "Sending SMS blast to attendees..." : "Sending SMS to selected attendee...",
+      message: mode === "all" ? `Sending ${channel} blast to attendees...` : `Sending ${channel} to selected attendee...`,
     });
 
     try {
-      const response = await fetch("/api/admin/sms", {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -142,21 +145,21 @@ export function AdminSmsClient({
       };
 
       if (!response.ok || !result.ok) {
-        throw new Error(result.error ?? "Unable to send SMS.");
+        throw new Error(result.error ?? `Unable to send ${channel}.`);
       }
 
       setAlert({
         type: "success",
         message:
           mode === "all"
-            ? `SMS blast sent to ${result.recipientCount ?? 0} attendees.`
-            : `SMS sent to ${selectedAttendee ? attendeeName(selectedAttendee) : "the selected attendee"}.`,
+            ? `${channel} blast sent to ${result.recipientCount ?? 0} attendees.`
+            : `${channel} sent to ${selectedAttendee ? attendeeName(selectedAttendee) : "the selected attendee"}.`,
       });
       setMessage("");
     } catch (error) {
       setAlert({
         type: "error",
-        message: error instanceof Error ? error.message : "Unable to send SMS.",
+        message: error instanceof Error ? error.message : `Unable to send ${channel}.`,
       });
     } finally {
       setIsSending(false);
@@ -170,8 +173,8 @@ export function AdminSmsClient({
       <header className="admin-attendees-header">
         <div>
           <div className="eyebrow">Event Admin</div>
-          <h1>Attendee SMS</h1>
-          <p>{adminName ? `Signed in as ${adminName}.` : "Send updates to attendees by SMS."}</p>
+          <h1>Attendee {channel}</h1>
+          <p>{adminName ? `Signed in as ${adminName}.` : `Send updates to attendees by ${channel}.`}</p>
         </div>
         <div className="admin-attendees-actions">
           <Link className="btn btn-secondary" href="/admin">
@@ -187,13 +190,13 @@ export function AdminSmsClient({
         <section className="admin-scan-card">
           <div className="admin-card-head">
             <div>
-              <div className="eyebrow">SMS Center</div>
+              <div className="eyebrow">{channel} Center</div>
               <h2>Compose message</h2>
             </div>
             <MessageSquareText />
           </div>
 
-          <div className="admin-segmented-control" role="tablist" aria-label="SMS recipient mode">
+          <div className="admin-segmented-control" role="tablist" aria-label={`${channel} recipient mode`}>
             <button
               className={`admin-segmented-option${mode === "all" ? " is-active" : ""}`}
               type="button"
@@ -278,7 +281,7 @@ export function AdminSmsClient({
               <textarea
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
-                placeholder="Type the SMS you want attendees to receive."
+                placeholder={`Type the ${channel} message you want attendees to receive.`}
                 rows={6}
                 required
               />
@@ -290,7 +293,7 @@ export function AdminSmsClient({
               disabled={isSending || !message.trim() || (mode === "single" && !selectedAttendeeId)}
             >
               {isSending ? <LoaderCircle className="spin" /> : <Send />}
-              {isSending ? "Sending..." : mode === "all" ? "Send blast SMS" : "Send attendee SMS"}
+              {isSending ? "Sending..." : mode === "all" ? `Send ${channel} blast` : `Send attendee ${channel}`}
             </button>
           </form>
 
@@ -304,4 +307,14 @@ export function AdminSmsClient({
       </main>
     </>
   );
+}
+
+type MessagingClientProps = Omit<Parameters<typeof AdminMessagingClient>[0], "channel">;
+
+export function AdminSmsClient(props: MessagingClientProps) {
+  return <AdminMessagingClient {...props} channel="SMS" />;
+}
+
+export function AdminWhatsAppClient(props: MessagingClientProps) {
+  return <AdminMessagingClient {...props} channel="WhatsApp" />;
 }

@@ -9,6 +9,7 @@ import {
   LoaderCircle,
   LogOut,
   MessageSquareText,
+  MessagesSquare,
   RefreshCw,
   ScanLine,
   Search,
@@ -458,6 +459,9 @@ export function AdminAttendeesClient({
         <div className="admin-attendees-actions">
           <Link className="btn btn-secondary" href="/admin/sms">
             <MessageSquareText /> SMS
+          </Link>
+          <Link className="btn btn-secondary" href="/admin/whatsapp">
+            <MessagesSquare /> WhatsApp
           </Link>
           <button className="btn btn-secondary" type="button" disabled={isRefreshing} onClick={() => void refreshAttendees()}>
             {isRefreshing ? <LoaderCircle className="spin" /> : <RefreshCw />}
