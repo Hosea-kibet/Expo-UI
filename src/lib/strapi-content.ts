@@ -112,7 +112,7 @@ export type ProgrammeDayContent = {
 export type GalleryItemContent = {
   title: string;
   slug?: string;
-  year: number;
+  year: number | string;
   mediaType: "image" | "video";
   caption?: string;
   alt?: string;
@@ -120,6 +120,7 @@ export type GalleryItemContent = {
   sortOrder?: number;
   media?: unknown;
   poster?: unknown;
+  videoPoster?: unknown;
 };
 
 export async function getHomepageContent() {

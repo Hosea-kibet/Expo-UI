@@ -28,6 +28,7 @@ function extractMediaUrl(media: unknown) {
       thumbnail?: { url?: unknown };
     };
     data?: unknown;
+    attributes?: unknown;
   };
 
   if (typeof record.url === "string") {
@@ -51,7 +52,23 @@ function extractMediaUrl(media: unknown) {
     return extractMediaUrl(record.data);
   }
 
+  if (record.attributes && typeof record.attributes === "object") {
+    return extractMediaUrl(record.attributes);
+  }
+
   return undefined;
+}
+
+function normalizeYear(year: unknown) {
+  if (typeof year === "number" && Number.isFinite(year)) {
+    return String(Math.trunc(year));
+  }
+
+  if (typeof year !== "string") return undefined;
+
+  // The CMS year field may be an enumeration label such as "Year 2025".
+  const match = year.match(/(?:19|20)\d{2}/);
+  return match?.[0];
 }
 
 export async function getGallerySnapshot(): Promise<GallerySnapshotItem[]> {
@@ -65,9 +82,10 @@ export async function getGallerySnapshot(): Promise<GallerySnapshotItem[]> {
 
   response.data.forEach((item) => {
     const record = item as Record<string, unknown>;
+    const year = normalizeYear(record.year);
     if (
       typeof record.title !== "string" ||
-      typeof record.year !== "number" ||
+      !year ||
       (record.mediaType !== "image" && record.mediaType !== "video")
     ) {
       return;
@@ -76,10 +94,10 @@ export async function getGallerySnapshot(): Promise<GallerySnapshotItem[]> {
     const src = extractMediaUrl(record.media);
     if (!src) return;
 
-    const poster = extractMediaUrl(record.poster);
+    const poster = extractMediaUrl(record.videoPoster ?? record.poster);
 
     items.push({
-      year: String(record.year),
+      year,
       type: record.mediaType,
       src,
       ...(poster ? { poster } : {}),
