@@ -437,16 +437,17 @@ export default function HomepageClient({
       }
 
       const overlay = document.getElementById("pmodal-overlay");
-      const badge = document.getElementById("pmodal-badge");
+      const partnerLogo = document.getElementById("pmodal-logo") as HTMLImageElement | null;
       const title = document.getElementById("pmodal-title");
       const about = document.getElementById("pmodal-about");
       const involvement = document.getElementById("pmodal-involvement");
       const partnerLink = document.getElementById("pmodal-link") as HTMLAnchorElement | null;
       const closeBtn = document.getElementById("pmodal-close");
 
-      if (overlay && badge && title && about && involvement && partnerLink) {
+      if (overlay && partnerLogo && title && about && involvement && partnerLink) {
         const openModal = (element: HTMLElement) => {
-          badge.textContent = element.dataset.badge ?? "";
+          partnerLogo.src = element.dataset.logo ?? "";
+          partnerLogo.alt = element.dataset.name ?? "Partner logo";
           title.textContent = element.dataset.title ?? "";
           about.textContent = element.dataset.about ?? "";
           involvement.textContent = element.dataset.involvement ?? "";
@@ -623,13 +624,11 @@ export default function HomepageClient({
               <div className="hero-supporters" aria-label="Event supporters">
                 <span className="hero-supporters-label">{initialData.organiserLabel}</span>
                 <div className="hero-supporters-logos">
-                  <div className="hero-supporter ministry-supporter">
-                    <img src={initialData.organiserPrimaryLogoUrl} alt={initialData.organiserPrimaryLogoAlt} />
-                  </div>
-                  <div className="hero-supporter hxie-supporter" aria-label={initialData.organiserSecondaryTitle}>
-                    <strong>{initialData.organiserSecondaryTitle}</strong>
-                    <span>{initialData.organiserSecondarySubtitle}</span>
-                  </div>
+                  {initialData.organisers.map((organiser, index) => (
+                    <div className="hero-supporter organiser-supporter" key={`${organiser.name}-${index}`}>
+                      <img src={organiser.logoUrl} alt={organiser.name} />
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -734,7 +733,8 @@ export default function HomepageClient({
                 <a
                   href="#"
                   className="ptn-link"
-                  data-badge={partner.badge}
+                  data-logo={partner.logoUrl}
+                  data-name={partner.name}
                   data-title={partner.title}
                   data-about={partner.about}
                   data-involvement={partner.involvement}
@@ -771,7 +771,7 @@ export default function HomepageClient({
             ✕
           </button>
           <div className="pmodal-head">
-            <div className="pmodal-badge-lg" id="pmodal-badge" />
+            <img className="pmodal-badge-lg" id="pmodal-logo" alt="" />
             <h2 className="pmodal-title" id="pmodal-title" />
           </div>
           <div className="pmodal-section">

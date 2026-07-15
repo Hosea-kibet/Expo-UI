@@ -2698,18 +2698,14 @@ p, .body { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 
     }
 
     .pmodal-badge-lg {
-      width: 44px;
+      width: 64px;
       height: 44px;
       flex-shrink: 0;
-      border-radius: 50%;
-      background: rgba(95, 168, 60, .15);
-      color: var(--leaf-600);
-      font-family: var(--sans);
-      font-size: 14px;
-      font-weight: 800;
-      display: grid;
-      place-items: center;
-      border: 1px solid rgba(95, 168, 60, .25)
+      border-radius: 6px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      padding: 5px;
+      object-fit: contain
     }
 
     .pmodal-title {
@@ -6174,39 +6170,15 @@ header.nav.scrolled .logo-mark-icon {
   }
 }
 
-.ministry-supporter {
-  width: min(330px, 100%);
+.organiser-supporter {
+  width: clamp(184px, 26vw, 330px);
   padding: 7px 12px;
 }
 
-.ministry-supporter img {
+.organiser-supporter img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-}
-
-.hxie-supporter {
-  min-width: 184px;
-  padding: 8px 16px;
-  display: grid;
-  align-content: center;
-  gap: 1px;
-  color: var(--field-900);
-}
-
-.hxie-supporter strong {
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: 0;
-}
-
-.hxie-supporter span {
-  font-family: var(--mono);
-  font-size: 7px;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--leaf-600);
 }
 
 @media (min-width: 1200px) {
@@ -6214,12 +6186,8 @@ header.nav.scrolled .logo-mark-icon {
     height: 72px;
   }
 
-  .ministry-supporter {
-    width: 360px;
-  }
-
-  .hxie-supporter {
-    min-width: 210px;
+  .organiser-supporter {
+    width: clamp(210px, 24vw, 360px);
   }
 }
 
@@ -6232,12 +6200,8 @@ header.nav.scrolled .logo-mark-icon {
     height: 52px;
   }
 
-  .ministry-supporter {
+  .organiser-supporter {
     width: min(260px, 100%);
-  }
-
-  .hxie-supporter {
-    min-width: 148px;
   }
 }
 

@@ -3,7 +3,7 @@ import { normalizeStrapiAssetUrl } from "@/src/lib/strapi-media";
 
 type HomepagePartner = {
   name: string;
-  badge: string;
+  logoUrl: string;
   title: string;
   about: string;
   involvement: string;
@@ -13,6 +13,11 @@ type HomepagePartner = {
 type HomepageSocialLink = {
   platform: "facebook" | "instagram" | "youtube" | "linkedin";
   url: string;
+};
+
+type HomepageOrganiser = {
+  name: string;
+  logoUrl: string;
 };
 
 export type HomepageSnapshot = {
@@ -25,10 +30,7 @@ export type HomepageSnapshot = {
   heroEyebrowSecondary: string;
   heroPills: string[];
   organiserLabel: string;
-  organiserPrimaryLogoUrl: string;
-  organiserPrimaryLogoAlt: string;
-  organiserSecondaryTitle: string;
-  organiserSecondarySubtitle: string;
+  organisers: HomepageOrganiser[];
   heroImageUrl: string;
   heroVideoUrl: string;
   eventStatus: string;
@@ -69,10 +71,29 @@ function normalizeMediaUrl(media: unknown) {
   return undefined;
 }
 
-function normalizeStringArray(value: unknown) {
+function normalizeHeroPills(value: unknown) {
   if (!Array.isArray(value)) return [];
-  const items = value.filter((item): item is string => typeof item === "string" && item.length > 0);
-  return items;
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const label = (item as Record<string, unknown>).label;
+      return typeof label === "string" && label ? label : null;
+    })
+    .filter((item): item is string => item !== null);
+}
+
+function normalizeOrganisers(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const logoUrl = normalizeMediaUrl(record.logo);
+      if (typeof record.name !== "string" || !record.name || !logoUrl) return null;
+      return { name: record.name, logoUrl };
+    })
+    .filter((item): item is HomepageOrganiser => item !== null);
 }
 
 function normalizePartners(value: unknown) {
@@ -81,14 +102,15 @@ function normalizePartners(value: unknown) {
     .map((item) => {
       if (!item || typeof item !== "object") return null;
       const record = item as Record<string, unknown>;
-      if (typeof record.name !== "string" || typeof record.title !== "string") return null;
+      const logoUrl = normalizeMediaUrl(record.logo);
+      if (typeof record.name !== "string" || typeof record.title !== "string" || !logoUrl) return null;
       return {
         name: record.name,
-        badge: typeof record.badge === "string" ? record.badge : "",
+        logoUrl,
         title: record.title,
         about: typeof record.about === "string" ? record.about : "",
         involvement: typeof record.involvement === "string" ? record.involvement : "",
-        url: typeof record.url === "string" ? record.url : "#",
+        url: typeof record.websiteUrl === "string" ? record.websiteUrl : "#",
       };
     })
     .filter((item): item is HomepagePartner => item !== null);
@@ -140,12 +162,9 @@ export async function getHomepageSnapshot(): Promise<HomepageSnapshot> {
     topbarTagline: typeof data.topbarTagline === "string" ? data.topbarTagline : "",
     heroEyebrowPrimary: typeof data.heroEyebrowPrimary === "string" ? data.heroEyebrowPrimary : "",
     heroEyebrowSecondary: typeof data.heroEyebrowSecondary === "string" ? data.heroEyebrowSecondary : "",
-    heroPills: normalizeStringArray(data.heroPills),
+    heroPills: normalizeHeroPills(data.heroPills),
     organiserLabel: typeof data.organiserLabel === "string" ? data.organiserLabel : "",
-    organiserPrimaryLogoUrl: typeof data.organiserPrimaryLogoUrl === "string" ? data.organiserPrimaryLogoUrl : "",
-    organiserPrimaryLogoAlt: typeof data.organiserPrimaryLogoAlt === "string" ? data.organiserPrimaryLogoAlt : "",
-    organiserSecondaryTitle: typeof data.organiserSecondaryTitle === "string" ? data.organiserSecondaryTitle : "",
-    organiserSecondarySubtitle: typeof data.organiserSecondarySubtitle === "string" ? data.organiserSecondarySubtitle : "",
+    organisers: normalizeOrganisers(data.organisers),
     heroImageUrl: normalizeMediaUrl(data.heroImage) ?? "",
     heroVideoUrl: normalizeMediaUrl(data.heroVideo) ?? "",
     eventStatus: typeof data.eventStatus === "string" ? data.eventStatus : "",
@@ -178,10 +197,7 @@ export async function getHomepageSnapshot(): Promise<HomepageSnapshot> {
   if (!snapshot.heroEyebrowSecondary) missingFields.push("heroEyebrowSecondary");
   if (snapshot.heroPills.length === 0) missingFields.push("heroPills");
   if (!snapshot.organiserLabel) missingFields.push("organiserLabel");
-  if (!snapshot.organiserPrimaryLogoUrl) missingFields.push("organiserPrimaryLogoUrl");
-  if (!snapshot.organiserPrimaryLogoAlt) missingFields.push("organiserPrimaryLogoAlt");
-  if (!snapshot.organiserSecondaryTitle) missingFields.push("organiserSecondaryTitle");
-  if (!snapshot.organiserSecondarySubtitle) missingFields.push("organiserSecondarySubtitle");
+  if (snapshot.organisers.length === 0) missingFields.push("organisers");
   if (!snapshot.heroImageUrl) missingFields.push("heroImage");
   if (!snapshot.heroVideoUrl) missingFields.push("heroVideo");
   if (!snapshot.eventStatus) missingFields.push("eventStatus");

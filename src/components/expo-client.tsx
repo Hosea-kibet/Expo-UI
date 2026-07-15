@@ -138,13 +138,7 @@ function ExpoFooter({
   onPartnerClick,
 }: {
   homepage: HomepageSnapshot;
-  onPartnerClick: (partner: {
-    badge: string;
-    title: string;
-    about: string;
-    involvement: string;
-    url: string;
-  }) => void;
+  onPartnerClick: (partner: HomepageSnapshot["partners"][number]) => void;
 }) {
   return (
     <>
@@ -595,13 +589,7 @@ export default function ExpoClient({
   const expoPage = initialData.expoPage;
   const [activeTab, setActiveTab] = useState<ExpoViewTab>("overview");
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
-  const [partnerModal, setPartnerModal] = useState<null | {
-    badge: string;
-    title: string;
-    about: string;
-    involvement: string;
-    url: string;
-  }>(null);
+  const [partnerModal, setPartnerModal] = useState<HomepageSnapshot["partners"][number] | null>(null);
   const [supportUnitModal, setSupportUnitModal] = useState<SupportUnit | null>(null);
 
   useEffect(() => {
@@ -977,7 +965,9 @@ export default function ExpoClient({
             ✕
           </button>
           <div className="pmodal-head">
-            <div className="pmodal-badge-lg">{partnerModal?.badge}</div>
+            {partnerModal ? (
+              <img className="pmodal-badge-lg" src={partnerModal.logoUrl} alt={partnerModal.name} />
+            ) : null}
             <h2 className="pmodal-title" id="pmodal-title">{partnerModal?.title}</h2>
           </div>
           <div className="pmodal-section">

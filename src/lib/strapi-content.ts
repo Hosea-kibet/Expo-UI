@@ -19,12 +19,9 @@ export type HomepageContent = {
   topbarTagline?: string;
   heroEyebrowPrimary?: string;
   heroEyebrowSecondary?: string;
-  heroPills?: string[];
+  heroPills?: unknown;
   organiserLabel?: string;
-  organiserPrimaryLogoUrl?: string;
-  organiserPrimaryLogoAlt?: string;
-  organiserSecondaryTitle?: string;
-  organiserSecondarySubtitle?: string;
+  organisers?: unknown;
   eventStatus?: string;
   eventName?: string;
   eventFullTitle?: string;
@@ -127,7 +124,12 @@ export type GalleryItemContent = {
 
 export async function getHomepageContent() {
   return getStrapiSingle<{ data: StrapiEntity<HomepageContent> | null }>("homepage", {
-    populate: "*",
+    "populate[heroImage]": true,
+    "populate[heroVideo]": true,
+    "populate[heroPills]": true,
+    "populate[organisers][populate]": "logo",
+    "populate[partners][populate]": "logo",
+    "populate[socialLinks]": true,
   });
 }
 
