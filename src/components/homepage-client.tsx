@@ -625,7 +625,12 @@ export default function HomepageClient({
                 <span className="hero-supporters-label">{initialData.organiserLabel}</span>
                 <div className="hero-supporters-logos">
                   {initialData.organisers.map((organiser, index) => (
-                    <div className="hero-supporter organiser-supporter" key={`${organiser.name}-${index}`}>
+                    <div
+                      className={`hero-supporter organiser-supporter${
+                        organiser.name.toLowerCase().includes("agri africa") ? " organiser-supporter-on-dark" : ""
+                      }`}
+                      key={`${organiser.name}-${index}`}
+                    >
                       <img src={organiser.logoUrl} alt={organiser.name} />
                     </div>
                   ))}

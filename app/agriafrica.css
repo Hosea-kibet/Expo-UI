@@ -6181,6 +6181,11 @@ header.nav.scrolled .logo-mark-icon {
   object-fit: contain;
 }
 
+.organiser-supporter-on-dark {
+  background: rgba(23, 52, 34, .96);
+  border-color: rgba(255, 255, 255, .3);
+}
+
 @media (min-width: 1200px) {
   .hero-supporter {
     height: 72px;
