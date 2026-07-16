@@ -5456,11 +5456,21 @@ footer.site .ptn-link {
   font-size: 38px;
 }
 
-.register-success > p {
+.register-success-copy {
   max-width: 480px;
   margin: 0 auto;
+  display: grid;
+  gap: 10px;
+}
+
+.register-success-copy p {
+  margin: 0;
   line-height: 1.65;
   color: var(--fg3);
+}
+
+.register-success-copy strong {
+  color: var(--field-800);
 }
 
 .register-reference {
@@ -5484,6 +5494,31 @@ footer.site .ptn-link {
 .register-reference strong {
   font-size: 18px;
   color: var(--field-800);
+}
+
+.register-success-event {
+  max-width: 520px;
+  margin: -8px auto 26px;
+  display: grid;
+  gap: 10px;
+  text-align: left;
+}
+
+.register-success-event > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--field-800);
+}
+
+.register-success-event svg {
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  flex: 0 0 auto;
+  color: var(--accent);
 }
 
 .register-success-actions {

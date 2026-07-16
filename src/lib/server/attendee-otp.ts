@@ -87,6 +87,59 @@ export async function requestAttendeeOtp(registration: PendingRegistration) {
   };
 }
 
+export async function resendAttendeeOtp(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const attendee = await getAttendeeByEmail(normalizedEmail);
+
+  if (!attendee) {
+    const error = new Error("We couldn't find the registration details previously provided.");
+    (error as Error & { status?: number }).status = 404;
+    throw error;
+  }
+
+  const secondsFromLastSend = secondsSince(attendee.otpLastSentAt);
+
+  if (secondsFromLastSend < OTP_RESEND_COOLDOWN_SECONDS) {
+    const retryAfter = OTP_RESEND_COOLDOWN_SECONDS - secondsFromLastSend;
+    const error = new Error(`Please wait ${retryAfter} seconds before requesting another code.`);
+    (error as Error & { status?: number; retryAfter?: number }).status = 429;
+    (error as Error & { status?: number; retryAfter?: number }).retryAfter = retryAfter;
+    throw error;
+  }
+
+  if (attendee.registrationStatus === "verified") {
+    const error = new Error("This email address is already registered.");
+    (error as Error & { status?: number }).status = 409;
+    throw error;
+  }
+
+  const otp = generateOtpCode();
+  const { hash, salt } = hashOtp(otp);
+  const now = new Date();
+  const expiresAt = addMinutes(now, OTP_EXPIRY_MINUTES).toISOString();
+
+  const savedAttendee = await updateAttendee(attendee.documentId, {
+    otpHash: hash,
+    otpSalt: salt,
+    otpExpiresAt: expiresAt,
+    otpLastSentAt: now.toISOString(),
+    otpAttemptCount: 0,
+    otpUsedAt: null,
+  });
+
+  await sendRegistrationOtpEmail({
+    email: savedAttendee.email,
+    firstName: savedAttendee.firstName,
+    otp,
+  });
+
+  return {
+    attendee: savedAttendee,
+    expiresInSeconds: OTP_EXPIRY_MINUTES * 60,
+    resendInSeconds: OTP_RESEND_COOLDOWN_SECONDS,
+  };
+}
+
 export async function verifyAttendeeOtp(email: string, otp: string) {
   const attendee = await getAttendeeByEmail(email);
 

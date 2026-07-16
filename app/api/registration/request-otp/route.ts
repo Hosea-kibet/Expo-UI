@@ -1,14 +1,17 @@
 import { NextRequest } from "next/server";
-import { requestAttendeeOtp } from "@/src/lib/server/attendee-otp";
+import { requestAttendeeOtp, resendAttendeeOtp } from "@/src/lib/server/attendee-otp";
 import { sanitizeRegistrationInput, validatePendingRegistration } from "@/src/lib/registration";
 
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as Record<string, unknown>;
-    const registration = sanitizeRegistrationInput(body);
-    validatePendingRegistration(registration);
-
-    const result = await requestAttendeeOtp(registration);
+    const result = body.resend === true
+      ? await resendAttendeeOtp(String(body.email ?? ""))
+      : await (async () => {
+          const registration = sanitizeRegistrationInput(body);
+          validatePendingRegistration(registration);
+          return requestAttendeeOtp(registration);
+        })();
 
     return Response.json({
       ok: true,

@@ -499,7 +499,10 @@ export function VisitorRegistrationClient({
                       headers: {
                         "Content-Type": "application/json",
                       },
-                      body: JSON.stringify(pendingRegistration),
+                      body: JSON.stringify({
+                        email: pendingRegistration.email,
+                        resend: true,
+                      }),
                     });
                     const result = (await response.json()) as {
                       ok: boolean;
@@ -537,14 +540,31 @@ export function VisitorRegistrationClient({
                 <BadgeCheck />
               </div>
               <div className="eyebrow">Registration complete</div>
-              <h2>You&apos;re on the guest list.</h2>
-              <p>
-                Your visitor confirmation has been prepared for <strong id="register-email">{email}</strong>.
-                Event updates and entry details will be sent closer to 2026 - AIAE.
-              </p>
+              <h2>You&apos;re Registered!</h2>
+              <div className="register-success-copy">
+                <p>
+                  Thank you for registering for the <strong>2026 Africa International Agricultural Expo (AIAE).</strong>
+                </p>
+                <p>
+                  Your <strong>Visitor Pass</strong>, containing your <strong>QR Code</strong> and <strong>Reference ID</strong>, has been sent to your registered <strong>email address</strong> and <strong>WhatsApp number</strong> (where applicable).
+                </p>
+                <p>
+                  Please present your <strong>QR Code</strong> or <strong>Reference ID</strong> at the registration desk for quick and seamless entry into the exhibition and conference areas.
+                </p>
+              </div>
               <div className="register-reference">
                 <span>Registration reference</span>
                 <strong id="register-reference">{reference}</strong>
+              </div>
+              <div className="register-success-event" aria-label="Event details">
+                <div>
+                  <CalendarDays />
+                  <strong>23–25 October 2026</strong>
+                </div>
+                <div>
+                  <MapPin />
+                  <strong>Kenyatta International Convention Center (KICC), Nairobi, Kenya</strong>
+                </div>
               </div>
               <div className="register-success-actions">
                 <Link className="btn btn-accent" href="/2026-aiae-expo">

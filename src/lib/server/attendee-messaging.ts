@@ -101,7 +101,10 @@ async function createTwilioMessage(params: Record<string, string>) {
 }
 
 export function registrationSmsMessage(registrationReference: string) {
-  return `2026 AIAE registration confirmed. Ref: ${registrationReference}. Visitor Pass sent by email. Present your QR code or reference at entry. 23-25 Oct, KICC Nairobi.`;
+  return `2026 AIAE: Your registration is confirmed!
+Reference ID: ${registrationReference}
+Your Visitor Pass with your QR Code has been sent to your email and WhatsApp. Please present your QR Code or Reference ID at the registration desk for entry.
+23–25 October 2026 at KICC, Nairobi`;
 }
 
 export async function sendRegistrationWhatsApp(attendee: RegistrationAttendee) {
