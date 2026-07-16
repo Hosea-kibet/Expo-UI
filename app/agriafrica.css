@@ -7124,3 +7124,14 @@ footer.site .foot-grid {
     width: 100%;
   }
 }
+
+/* Keep gallery section spacing aligned with the native page after shared wrap rules. */
+.gallery-page .gallery-library {
+  padding: 72px 0 88px;
+}
+
+@media (max-width: 600px) {
+  .gallery-page .gallery-library {
+    padding: 48px 0 64px;
+  }
+}
