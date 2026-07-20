@@ -1,6 +1,7 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import type { AttendeeRecord } from "@/src/lib/server/strapi-admin";
 import { attendeeSmsAddress, sendBelioSms } from "@/src/lib/server/belio-sms";
+import { createVisitorPassPdf } from "@/src/lib/server/visitor-pass";
 
 type RegistrationAttendee = Pick<
   AttendeeRecord,
@@ -12,6 +13,17 @@ type RegistrationAttendee = Pick<
   | "registrationReference"
 >;
 
+type MetaWhatsAppError = {
+  error?: {
+    message?: string;
+    type?: string;
+    code?: number;
+    error_subcode?: number;
+    error_data?: { details?: string };
+    fbtrace_id?: string;
+  };
+};
+
 export function attendeeWhatsAppAddress(attendee: RegistrationAttendee) {
   const countryCode = String(attendee.countryCode ?? "").replace(/\D/g, "");
   const localPhone = String(attendee.phone ?? "").replace(/\D/g, "").replace(/^0/, "");
@@ -21,35 +33,11 @@ export function attendeeWhatsAppAddress(attendee: RegistrationAttendee) {
     : storedFullPhone
       ? `+${storedFullPhone.replace(/^00/, "")}`
       : "";
-  const parsedPhone = parsePhoneNumberFromString(internationalCandidate);
 
-  if (!parsedPhone?.isValid()) {
-    throw new Error("The attendee phone number is not a valid international WhatsApp number.");
-  }
-
-  return `whatsapp:${parsedPhone.number}`;
+  return normalizeWhatsAppRecipient(internationalCandidate);
 }
 
-function getWhatsAppConfig() {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const sender = process.env.TWILIO_WHATSAPP_FROM;
-
-  if (!accountSid || !authToken || !sender) {
-    throw new Error(
-      "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_WHATSAPP_FROM must be configured.",
-    );
-  }
-
-  return {
-    accountSid,
-    authToken,
-    sender: normalizeWhatsAppAddress(sender),
-    messagesUrl: `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-  };
-}
-
-function normalizeWhatsAppAddress(value: string) {
+function normalizeWhatsAppRecipient(value: string) {
   const phone = value.replace(/^whatsapp:/i, "").trim();
   const internationalPhone = phone.startsWith("+") ? phone : `+${phone.replace(/\D/g, "")}`;
   const parsedPhone = parsePhoneNumberFromString(internationalPhone);
@@ -58,10 +46,33 @@ function normalizeWhatsAppAddress(value: string) {
     throw new Error("A valid international WhatsApp number is required.");
   }
 
-  return `whatsapp:${parsedPhone.number}`;
+  // Meta expects the E.164 recipient without the leading plus sign.
+  return parsedPhone.number.slice(1);
 }
 
-async function parseTwilioResponse(response: Response) {
+function getWhatsAppConfig() {
+  const accessToken = process.env.META_WHATSAPP_ACCESS_TOKEN;
+  const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
+  const apiVersion = process.env.META_WHATSAPP_API_VERSION || "v23.0";
+
+  if (!accessToken || !phoneNumberId) {
+    throw new Error(
+      "META_WHATSAPP_ACCESS_TOKEN and META_WHATSAPP_PHONE_NUMBER_ID must be configured.",
+    );
+  }
+
+  if (!/^v\d+\.\d+$/.test(apiVersion)) {
+    throw new Error("META_WHATSAPP_API_VERSION must use a value such as v23.0.");
+  }
+
+  return {
+    accessToken,
+    messagesUrl: `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`,
+    mediaUrl: `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/media`,
+  };
+}
+
+async function parseMetaResponse(response: Response) {
   const text = await response.text();
   let result: unknown = {};
 
@@ -69,35 +80,72 @@ async function parseTwilioResponse(response: Response) {
     try {
       result = JSON.parse(text);
     } catch {
-      result = { message: text };
+      result = { error: { message: text } };
     }
   }
 
   if (!response.ok) {
-    const error = result as { message?: string; code?: number };
-    const code = error.code ? ` (Twilio ${error.code})` : "";
+    const error = (result as MetaWhatsAppError).error;
+    const code = error?.code ? ` (Meta ${error.code}${error.error_subcode ? `/${error.error_subcode}` : ""})` : "";
+    const details = error?.error_data?.details;
     throw new Error(
-      `${error.message || text || `WhatsApp request failed with ${response.status}.`}${code}`,
+      `${details || error?.message || text || `WhatsApp request failed with ${response.status}.`}${code}`,
     );
   }
 
   return result;
 }
 
-async function createTwilioMessage(params: Record<string, string>) {
+async function createMetaWhatsAppMessage(to: string, message: Record<string, unknown>) {
   const config = getWhatsAppConfig();
-  const body = new URLSearchParams({ From: config.sender, ...params });
   const response = await fetch(config.messagesUrl, {
     method: "POST",
     headers: {
-      Authorization: `Basic ${Buffer.from(`${config.accountSid}:${config.authToken}`).toString("base64")}`,
-      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Bearer ${config.accessToken}`,
+      "Content-Type": "application/json",
     },
-    body,
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: normalizeWhatsAppRecipient(to),
+      ...message,
+    }),
     cache: "no-store",
   });
 
-  return parseTwilioResponse(response);
+  return parseMetaResponse(response);
+}
+
+async function uploadRegistrationVisitorPass(attendee: RegistrationAttendee) {
+  const config = getWhatsAppConfig();
+  const visitorPassData = {
+    visitor_name: `${attendee.firstName} ${attendee.lastName}`.trim(),
+    reference_id: attendee.registrationReference,
+    dates: "23–25 October 2026",
+    venue: "Kenyatta International Convention Centre (KICC), Nairobi, Kenya",
+  };
+  const visitorPass = await createVisitorPassPdf(visitorPassData);
+  const formData = new FormData();
+  formData.append("messaging_product", "whatsapp");
+  formData.append(
+    "file",
+    new Blob([new Uint8Array(visitorPass)], { type: "application/pdf" }),
+    `AIAE-Visitor-Pass-${attendee.registrationReference}.pdf`,
+  );
+
+  const response = await fetch(config.mediaUrl, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${config.accessToken}` },
+    body: formData,
+    cache: "no-store",
+  });
+  const result = await parseMetaResponse(response) as { id?: string };
+
+  if (!result.id) {
+    throw new Error("Meta uploaded the Visitor Pass PDF but did not return a media ID.");
+  }
+
+  return result.id;
 }
 
 export function registrationSmsMessage(registrationReference: string) {
@@ -108,32 +156,49 @@ Your Visitor Pass with your QR Code has been sent to your email and WhatsApp. Pl
 }
 
 export async function sendRegistrationWhatsApp(attendee: RegistrationAttendee) {
-  const contentSid = process.env.TWILIO_WHATSAPP_REGISTRATION_CONTENT_SID;
-  const templateMode = process.env.TWILIO_WHATSAPP_TEMPLATE_MODE ?? "production";
-  const recipient = attendeeWhatsAppAddress(attendee);
+  const templateName = process.env.META_WHATSAPP_REGISTRATION_TEMPLATE_NAME;
+  const languageCode = process.env.META_WHATSAPP_TEMPLATE_LANGUAGE || "en_US";
 
-  if (!contentSid) {
-    throw new Error("TWILIO_WHATSAPP_REGISTRATION_CONTENT_SID must be configured.");
+  if (!templateName) {
+    throw new Error("META_WHATSAPP_REGISTRATION_TEMPLATE_NAME must be configured.");
   }
 
-  const contentVariables = templateMode === "sandbox"
-    ? { "1": "23 October 2026", "2": "9:00 AM" }
-    : {
-        "1": `${attendee.firstName} ${attendee.lastName}`.trim(),
-        "2": attendee.registrationReference,
-      };
+  const visitorPassMediaId = await uploadRegistrationVisitorPass(attendee);
 
-  return createTwilioMessage({
-    To: recipient,
-    ContentSid: contentSid,
-    ContentVariables: JSON.stringify(contentVariables),
+  return createMetaWhatsAppMessage(attendeeWhatsAppAddress(attendee), {
+    type: "template",
+    template: {
+      name: templateName,
+      language: { code: languageCode },
+      components: [
+        {
+          type: "header",
+          parameters: [
+            {
+              type: "document",
+              document: {
+                id: visitorPassMediaId,
+                filename: `AIAE-Visitor-Pass-${attendee.registrationReference}.pdf`,
+              },
+            },
+          ],
+        },
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: `${attendee.firstName} ${attendee.lastName}`.trim() },
+            { type: "text", text: attendee.registrationReference },
+          ],
+        },
+      ],
+    },
   });
 }
 
 export async function sendWhatsAppText(message: string, recipient: string) {
-  return createTwilioMessage({
-    To: normalizeWhatsAppAddress(recipient),
-    Body: message,
+  return createMetaWhatsAppMessage(recipient, {
+    type: "text",
+    text: { body: message, preview_url: false },
   });
 }
 

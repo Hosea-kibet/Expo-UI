@@ -397,9 +397,9 @@ export function VisitorRegistrationClient({
                     By submitting this form, you agree to Agri Africa&apos;s{" "}
                     <Link href="/privacy-policy">Privacy Policy</Link> and{" "}
                     <Link href="/terms-and-conditions">Terms and Conditions</Link>,
-                    and consent to receiving communications, updates,
-                    opportunities, and invitations related to the purpose for which your
-                    information is being collected. <span className="required-mark">*</span>
+                    and consent to receiving registration confirmations and event-related
+                    communications, updates, opportunities, and invitations by email, SMS, and
+                    WhatsApp using the contact details provided. <span className="required-mark">*</span>
                   </span>
                 </label>
                 <button className="btn btn-accent lg block register-submit" type="submit">
