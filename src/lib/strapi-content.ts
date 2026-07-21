@@ -145,7 +145,10 @@ export async function getTermsAndConditionContent() {
 
 export async function getExpoPageContent() {
   return getStrapiSingle<{ data: StrapiEntity<ExpoPageContent> | null }>("expo-page", {
-    populate: "*",
+    "populate[overviewGuests][populate][imageUrl]": true,
+    "populate[overviewObjectives]": true,
+    "populate[overviewCategories]": true,
+    "populate[floorPlan]": true,
   });
 }
 

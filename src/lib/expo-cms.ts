@@ -208,9 +208,12 @@ function normalizeOverviewGuests(value: unknown) {
     .map((item) => {
       if (!item || typeof item !== "object") return null;
       const record = item as Record<string, unknown>;
+      const imageUrl =
+        extractMediaUrl(record.imageUrl) ??
+        (typeof record.imageUrl === "string" ? normalizeAssetUrl(record.imageUrl) : undefined);
+
       if (
-        typeof record.imageUrl !== "string" ||
-        typeof record.alt !== "string" ||
+        !imageUrl ||
         typeof record.name !== "string" ||
         typeof record.title !== "string" ||
         typeof record.org !== "string"
@@ -219,8 +222,8 @@ function normalizeOverviewGuests(value: unknown) {
       }
 
       return {
-        imageUrl: record.imageUrl,
-        alt: record.alt,
+        imageUrl,
+        alt: typeof record.alt === "string" && record.alt.trim() ? record.alt : record.name,
         name: record.name,
         title: record.title,
         org: record.org,
