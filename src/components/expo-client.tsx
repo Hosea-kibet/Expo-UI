@@ -24,7 +24,6 @@ import {
   Store,
   Youtube,
 } from "lucide-react";
-import { BrandPreloader } from "@/src/components/brand-preloader";
 import { ExpoOverview } from "@/src/components/expo-overview";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import { LegalFooterLinks } from "@/src/components/legal-links";
@@ -610,7 +609,7 @@ export default function ExpoClient({
 
   useEffect(() => {
     const previous = document.body.className;
-    document.body.className = "loading expo-page";
+    document.body.className = "expo-page";
     let mounted = true;
     const cleanup: Array<() => void> = [];
 
@@ -618,32 +617,6 @@ export default function ExpoClient({
       const { gsap } = await import("gsap");
       if (!mounted) return;
       (window as Window & { gsap?: typeof gsap }).gsap = gsap;
-
-      const preEl = document.getElementById("preloader");
-      if (preEl) {
-        const tl = gsap.timeline({
-          onComplete: () => {
-            document.body.classList.remove("loading");
-          },
-        });
-        gsap.set(".pre-mark", { scale: 22, transformOrigin: "center center" });
-        gsap.set(".pre-wm", { opacity: 0 });
-        gsap.set(".pre-lt", { opacity: 0 });
-        tl.to(".pre-mark", { scale: 1, duration: 1.2, ease: "expo.out" })
-          .to(".pre-mark", { x: -82, y: -15, scale: 0.73, duration: 0.42, delay: 0.1, ease: "power2.inOut" })
-          .to(".pre-mark", { opacity: 0, duration: 0.18, ease: "power2.in" })
-          .to(".pre-wm", { opacity: 1, duration: 0.22, ease: "power2.out" }, "<0.04")
-          .to(".pre-lt", { opacity: 1, duration: 0.1, stagger: 0.065, ease: "power1.out" })
-          .to(preEl, {
-            opacity: 0,
-            duration: 0.7,
-            delay: 0.55,
-            ease: "power2.inOut",
-            onComplete: () => preEl.classList.add("done"),
-          });
-      } else {
-        document.body.classList.remove("loading");
-      }
 
       const nav = document.getElementById("nav");
       const onScroll = () => nav?.classList.toggle("scrolled", window.scrollY > 24);
@@ -797,8 +770,7 @@ export default function ExpoClient({
 
   return (
     <>
-      <PageBodyClass className="loading expo-page" />
-      <BrandPreloader />
+      <PageBodyClass className="expo-page" />
 
       <div className="topbar-shell">
         <div className="wrap topbar">

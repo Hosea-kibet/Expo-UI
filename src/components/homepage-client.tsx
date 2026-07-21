@@ -16,7 +16,6 @@ import {
   Ticket,
   Youtube,
 } from "lucide-react";
-import { BrandPreloader } from "@/src/components/brand-preloader";
 import { LegalFooterLinks } from "@/src/components/legal-links";
 import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
@@ -70,7 +69,7 @@ export default function HomepageClient({
     let mounted = true;
     const cleanup: Array<() => void> = [];
     const previousBodyClassName = document.body.className;
-    document.body.className = "loading";
+    document.body.className = "";
 
     async function init() {
       const { gsap } = (await import("gsap")) as { gsap: typeof import("gsap").default };
@@ -279,11 +278,11 @@ export default function HomepageClient({
 
       const notifyPreloaderDone = () => document.dispatchEvent(new CustomEvent("preloader-done"));
 
+      document.documentElement.classList.remove("no-gsap");
       if (!preloader) {
         document.body.classList.remove("loading");
         initReveals();
       } else {
-        document.documentElement.classList.remove("no-gsap");
         const tl = gsap.timeline({
           onComplete: () => {
             document.body.classList.remove("loading");
@@ -507,8 +506,6 @@ export default function HomepageClient({
 
   return (
     <>
-      <BrandPreloader />
-
       <div className="topbar-shell">
         <div className="wrap topbar">
           <div className="topbar-left">

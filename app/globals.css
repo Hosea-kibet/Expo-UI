@@ -9,3 +9,65 @@ body {
 body {
   text-rendering: optimizeLegibility;
 }
+
+/* The App Router mounts this splash immediately while destination data streams. */
+.route-splash-loader .pre-mark {
+  animation: route-splash-mark 2.4s cubic-bezier(.16, 1, .3, 1) infinite;
+  transform-origin: center;
+}
+
+.route-splash-loader .pre-wm {
+  animation: route-splash-wordmark 2.4s cubic-bezier(.16, 1, .3, 1) infinite;
+}
+
+.route-splash-loader .pre-lt {
+  opacity: 1;
+}
+
+@keyframes route-splash-mark {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(12);
+  }
+  34% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  48%,
+  82% {
+    opacity: 0;
+    transform: translate(-82px, -15px) scale(.73);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(12);
+  }
+}
+
+@keyframes route-splash-wordmark {
+  0%,
+  43% {
+    opacity: 0;
+    transform: scale(.96);
+  }
+  55%,
+  82% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-splash-loader .pre-mark {
+    display: none;
+  }
+
+  .route-splash-loader .pre-wm {
+    opacity: 1;
+    animation: none;
+  }
+}
