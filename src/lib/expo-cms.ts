@@ -113,16 +113,10 @@ export function normalizeExhibitor(record: Record<string, unknown>): Exhibitor |
       record.country === "China" ? "china" : record.country === "Kenya" ? "kenya" : "africa",
     origin:
       typeof record.origin === "string" && record.origin.length > 0
-        ? record.origin.startsWith("🇨🇳") ||
-          record.origin.startsWith("🇰🇪") ||
-          record.origin.startsWith("🌍")
-          ? record.origin
-          : record.country === "China"
-            ? `🇨🇳 ${record.origin}`
-            : record.country === "Kenya"
-              ? `🇰🇪 ${record.origin}`
-              : `🌍 ${record.origin}`
-        : "",
+        ? record.origin
+        : typeof record.country === "string"
+          ? record.country
+          : "",
     category:
       record.category === "machinery" ||
       record.category === "technology" ||
@@ -175,9 +169,9 @@ function normalizeSupportUnit(record: Record<string, unknown>): SupportUnit | nu
 
 function normalizeProgrammeDay(record: Record<string, unknown>): ProgrammeDay | null {
   if (
-    typeof record.dayKey !== "string" ||
     typeof record.label !== "string" ||
-    typeof record.heading !== "string"
+    typeof record.heading !== "string" ||
+    (typeof record.documentId !== "string" && typeof record.id !== "number")
   ) {
     return null;
   }
@@ -199,7 +193,7 @@ function normalizeProgrammeDay(record: Record<string, unknown>): ProgrammeDay | 
     : [];
 
   return {
-    id: record.dayKey,
+    id: typeof record.documentId === "string" ? record.documentId : String(record.id),
     label: record.label,
     heading: record.heading,
     hours: typeof record.hours === "string" ? record.hours : "",
@@ -305,6 +299,13 @@ export async function getExpoCmsSnapshot(): Promise<ExpoCmsSnapshot> {
     ? programmeDaysResponse.data
         .map((item) => normalizeProgrammeDay(item as Record<string, unknown>))
         .filter((item): item is ProgrammeDay => item !== null)
+        .sort((first, second) => {
+          const firstDay = Number(first.label.match(/\d+/)?.[0]);
+          const secondDay = Number(second.label.match(/\d+/)?.[0]);
+
+          if (Number.isNaN(firstDay) || Number.isNaN(secondDay)) return 0;
+          return firstDay - secondDay;
+        })
     : [];
 
   const snapshot: ExpoCmsSnapshot = {

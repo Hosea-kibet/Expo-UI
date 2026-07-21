@@ -102,7 +102,6 @@ export type ProgrammeSessionContent = {
 };
 
 export type ProgrammeDayContent = {
-  dayKey: string;
   label: string;
   heading: string;
   hours?: string;

@@ -1152,8 +1152,12 @@ p, .body { font-size: var(--fs-body); line-height: var(--lh-body); font-weight: 
   .booth-badge{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--harvest-300);color:var(--soil-900);padding:3px 10px;border-radius:var(--r-pill);align-self:flex-start;font-weight:700}
   .ex-card.vacant .booth-badge{background:var(--paper-deep);color:var(--fg3)}
   .ex-name{font-size:15px;font-weight:700;color:var(--field-900);line-height:1.3}
-  .ex-origin{font-family:var(--mono);font-size:11px;color:var(--fg3);letter-spacing:.04em}
-  .ex-desc{font-size:13px;color:var(--fg2);line-height:1.45;flex:1}
+  .ex-card-field{display:flex;flex-direction:column;gap:4px}
+  .ex-card-business{flex:1}
+  .ex-card-label{width:fit-content;font-family:var(--sans);font-size:12px;font-weight:700;color:var(--clay-500);text-decoration:underline;text-underline-offset:3px}
+  .ex-origin{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;color:var(--fg3);letter-spacing:.04em}
+  .ex-country-flag{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:13px;line-height:1}
+  .ex-desc{font-size:13px;color:var(--fg2);line-height:1.45}
   .ex-link{font-size:12px;font-weight:700;color:var(--leaf-500);display:inline-flex;align-items:center;gap:4px;margin-top:4px;transition:color .18s ease}
   .ex-link:hover{color:var(--leaf-600)}
 
@@ -6208,6 +6212,7 @@ header.nav.scrolled .logo-mark-icon {
 .organiser-supporter {
   width: clamp(184px, 26vw, 330px);
   padding: 7px 12px;
+  background: #fff;
 }
 
 .organiser-supporter img {
@@ -6217,8 +6222,7 @@ header.nav.scrolled .logo-mark-icon {
 }
 
 .organiser-supporter-on-dark {
-  background: rgba(23, 52, 34, .96);
-  border-color: rgba(255, 255, 255, .3);
+  background: #fff;
 }
 
 @media (min-width: 1200px) {

@@ -31,9 +31,21 @@ import { LegalFooterLinks } from "@/src/components/legal-links";
 import type { ExpoCmsSnapshot } from "@/src/lib/expo-cms";
 import type { Exhibitor, SupportUnit } from "@/src/lib/expo-types";
 import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
+import { flagFromCountryName } from "@/src/lib/countries";
 
 type ExpoTab = "overview" | "exhibitors" | "support" | "floorplan" | "programme";
 type ExpoViewTab = ExpoTab | "exhibitor-detail";
+
+function ExhibitorCountry({ country, label }: { country: string; label: string }) {
+  const flag = flagFromCountryName(country);
+
+  return (
+    <div className="ex-origin">
+      {flag ? <span className="ex-country-flag" aria-hidden="true">{flag}</span> : null}
+      <span>{label}</span>
+    </div>
+  );
+}
 
 const tabLabels: Record<ExpoTab, string> = {
   overview: "Overview",
@@ -378,7 +390,11 @@ function ExhibitorsPanel({
             >
               <span className="booth-badge">{item.booth}</span>
               <div className="ex-name">{item.name}</div>
-              <div className="ex-origin">{item.origin}</div>
+              <ExhibitorCountry country={item.country} label={item.origin || item.country} />
+              <div className="ex-card-field ex-card-business">
+                <span className="ex-card-label">Line Of Business</span>
+                <div className="ex-desc">{item.business}</div>
+              </div>
               <span className="ex-link">View Details →</span>
             </a>
           ))}
@@ -535,7 +551,7 @@ function ProgrammePanel({
       <div id="programme" className="panel-anchor" aria-hidden="true" />
       <div className="panel-head reveal in">
         <div className="eyebrow">Event Schedule</div>
-        <h1>4 Days, Curated</h1>
+        <h1>{programmeDaysData.length} {programmeDaysData.length === 1 ? "Day" : "Days"}, Curated</h1>
         <p>Keynotes, workshops, B2B networking, and cultural moments — built for decision-makers.</p>
       </div>
       <div className="reveal in">

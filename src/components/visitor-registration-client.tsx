@@ -25,6 +25,7 @@ import {
   sanitizeRegistrationInput,
   type PendingRegistration,
 } from "@/src/lib/registration";
+import { flagFromIsoCode } from "@/src/lib/countries";
 import type { ExpoCmsSnapshot } from "@/src/lib/expo-cms";
 import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
@@ -52,12 +53,6 @@ const countryOptions: CountryOption[] = Country.getAllCountries()
 
 const defaultCountryOption =
   countryOptions.find((country) => country.value === "Kenya") ?? countryOptions[0];
-
-function flagFromIsoCode(isoCode: string) {
-  return isoCode
-    .toUpperCase()
-    .replace(/./g, (character) => String.fromCodePoint(127397 + character.charCodeAt(0)));
-}
 
 function phonePlaceholderForCountry(isoCode: string) {
   const example = getExampleNumber(isoCode as CountryCode, examples);
