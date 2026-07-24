@@ -619,6 +619,7 @@ export default function HomepageClient({
                 })}
               </div>
               <div className="hero-supporters" aria-label="Event supporters">
+                <span className="hero-supporters-title">2026 - Africa International Agricultural Expo</span>
                 <span className="hero-supporters-label">{initialData.organiserLabel}</span>
                 <div className="hero-supporters-logos">
                   {initialData.organisers.map((organiser, index) => (
