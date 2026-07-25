@@ -13,6 +13,7 @@ import {
   BadgeCheck,
   CalendarDays,
   LockKeyhole,
+  LoaderCircle,
   MailCheck,
   MapPin,
   Plus,
@@ -125,6 +126,16 @@ export function VisitorRegistrationClient({
     <>
       <PageBodyClass className={bodyClassName} />
       <PagePreloader bodyClassName={bodyClassName} />
+      {submitState === "submitting" ? (
+        <div
+          className="register-submit-overlay"
+          role="status"
+          aria-live="polite"
+          aria-label={step === "verification" ? "Completing registration" : "Creating registration"}
+        >
+          <LoaderCircle />
+        </div>
+      ) : null}
 
       <header className="register-nav">
         <Link href="/" aria-label="Agri Africa home">
@@ -397,9 +408,19 @@ export function VisitorRegistrationClient({
                     WhatsApp using the contact details provided. <span className="required-mark">*</span>
                   </span>
                 </label>
-                <button className="btn btn-accent lg block register-submit" type="submit">
-                  {submitState === "submitting" ? "Sending verification code..." : "Complete registration"}{" "}
-                  <ArrowRight />
+                <button
+                  className="btn btn-accent lg block register-submit"
+                  type="submit"
+                  disabled={submitState === "submitting"}
+                  aria-busy={submitState === "submitting"}
+                >
+                  {submitState === "submitting" ? (
+                    <>Creating your registration</>
+                  ) : (
+                    <>
+                      Complete registration <ArrowRight />
+                    </>
+                  )}
                 </button>
                 {submitError ? <p className="register-submit-error">{submitError}</p> : null}
                 <p className="register-privacy">
@@ -473,11 +494,19 @@ export function VisitorRegistrationClient({
                   placeholder="Enter 4–6 digit code"
                 />
               </label>
-              <button className="btn btn-accent lg block register-submit" type="submit">
-                {submitState === "submitting"
-                  ? "Completing registration..."
-                  : "Verify & complete registration"}{" "}
-                <ArrowRight />
+              <button
+                className="btn btn-accent lg block register-submit"
+                type="submit"
+                disabled={submitState === "submitting"}
+                aria-busy={submitState === "submitting"}
+              >
+                {submitState === "submitting" ? (
+                  <>Completing registration</>
+                ) : (
+                  <>
+                    Verify &amp; complete registration <ArrowRight />
+                  </>
+                )}
               </button>
               {submitError ? <p className="register-submit-error">{submitError}</p> : null}
               <button

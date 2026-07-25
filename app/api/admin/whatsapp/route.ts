@@ -5,28 +5,33 @@ import {
 } from "@/src/lib/server/attendee-messaging";
 import {
   getAttendeeByDocumentId,
-  listAttendees,
+  listAllAttendees,
   type AttendeeRecord,
 } from "@/src/lib/server/strapi-admin";
 import { getAdminTokenFromRequest } from "@/src/lib/server/admin-session";
+import {
+  filterAttendeesForMessage,
+  type AttendeeMessageFilters,
+} from "@/src/lib/attendee-message-filters";
 
 function unauthorized() {
   return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
 }
 
-async function listAllAttendees() {
-  const attendees: AttendeeRecord[] = [];
-  let page = 1;
-  let pageCount = 1;
+async function sendWhatsAppInBatches(message: string, recipients: string[]) {
+  const results: PromiseSettledResult<unknown>[] = [];
+  const batchSize = 20;
 
-  do {
-    const result = await listAttendees(undefined, { page, pageSize: 100, search: "" });
-    attendees.push(...result.attendees);
-    pageCount = result.pagination.pageCount;
-    page += 1;
-  } while (page <= pageCount);
+  for (let index = 0; index < recipients.length; index += batchSize) {
+    const batch = recipients.slice(index, index + batchSize);
+    results.push(
+      ...(await Promise.allSettled(
+        batch.map((recipient) => sendWhatsAppText(message, recipient)),
+      )),
+    );
+  }
 
-  return attendees;
+  return results;
 }
 
 export async function POST(request: NextRequest) {
@@ -38,6 +43,7 @@ export async function POST(request: NextRequest) {
       mode?: "all" | "single";
       attendeeDocumentId?: string;
       message?: string;
+      filters?: Partial<AttendeeMessageFilters>;
     };
     const mode = body.mode === "single" ? "single" : "all";
     const message = String(body.message ?? "").trim();
@@ -58,7 +64,17 @@ export async function POST(request: NextRequest) {
       }
       attendees = [attendee];
     } else {
-      attendees = await listAllAttendees();
+      attendees = filterAttendeesForMessage(
+        await listAllAttendees(),
+        body.filters,
+      );
+    }
+
+    if (attendees.length === 0) {
+      return NextResponse.json(
+        { ok: false, error: "No attendees match the selected blast filters." },
+        { status: 400 },
+      );
     }
 
     const recipients = new Map<string, AttendeeRecord>();
@@ -75,9 +91,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "No valid WhatsApp numbers were found." }, { status: 400 });
     }
 
-    const results = await Promise.allSettled(
-      [...recipients.keys()].map((recipient) => sendWhatsAppText(message, recipient)),
-    );
+    const results = await sendWhatsAppInBatches(message, [...recipients.keys()]);
     const sentCount = results.filter((result) => result.status === "fulfilled").length;
     const errors = results
       .filter((result): result is PromiseRejectedResult => result.status === "rejected")

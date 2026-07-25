@@ -12,10 +12,17 @@ import {
   Search,
   Send,
   Users,
+  X,
 } from "lucide-react";
-import { useDeferredValue, useEffect, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import type { AttendeeRecord } from "@/src/lib/server/strapi-admin";
+import {
+  emptyAttendeeMessageFilters,
+  filterAttendeesForMessage,
+  hasAttendeeMessageFilters,
+  type AttendeeMessageFilters,
+} from "@/src/lib/attendee-message-filters";
 
 type AlertState = {
   type: "success" | "error" | "info";
@@ -26,6 +33,11 @@ type SendMode = "all" | "single";
 
 function attendeeName(attendee: AttendeeRecord) {
   return `${attendee.firstName} ${attendee.lastName}`.trim();
+}
+
+function uniqueValues(attendees: AttendeeRecord[], field: "country" | "city" | "gender" | "company") {
+  return [...new Set(attendees.map((attendee) => String(attendee[field] ?? "").trim()).filter(Boolean))]
+    .sort((left, right) => left.localeCompare(right));
 }
 
 export function AdminMessagingClient({
@@ -52,8 +64,41 @@ export function AdminMessagingClient({
   );
   const [isLoadingAttendees, setIsLoadingAttendees] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [blastFilters, setBlastFilters] = useState<AttendeeMessageFilters>(
+    emptyAttendeeMessageFilters,
+  );
   const deferredSearch = useDeferredValue(searchInput);
   const requestSequenceRef = useRef(0);
+  const filterOptions = useMemo(
+    () => ({
+      countries: uniqueValues(initialAttendees, "country"),
+      cities: uniqueValues(
+        blastFilters.country
+          ? initialAttendees.filter((attendee) => attendee.country === blastFilters.country)
+          : initialAttendees,
+        "city",
+      ),
+      genders: uniqueValues(initialAttendees, "gender"),
+      companies: uniqueValues(initialAttendees, "company"),
+    }),
+    [blastFilters.country, initialAttendees],
+  );
+  const filteredAttendeeCount = useMemo(
+    () => filterAttendeesForMessage(initialAttendees, blastFilters).length,
+    [blastFilters, initialAttendees],
+  );
+  const hasBlastFilters = hasAttendeeMessageFilters(blastFilters);
+
+  function updateBlastFilter<Key extends keyof AttendeeMessageFilters>(
+    key: Key,
+    value: AttendeeMessageFilters[Key],
+  ) {
+    setBlastFilters((current) => ({
+      ...current,
+      [key]: value,
+      ...(key === "country" ? { city: "" } : {}),
+    }));
+  }
 
   useEffect(() => {
     setAttendees(initialAttendees);
@@ -135,12 +180,14 @@ export function AdminMessagingClient({
           mode,
           attendeeDocumentId: mode === "single" ? selectedAttendeeId : undefined,
           message,
+          filters: mode === "all" ? blastFilters : undefined,
         }),
       });
 
       const result = (await response.json()) as {
         ok: boolean;
         recipientCount?: number;
+        failedCount?: number;
         error?: string;
       };
 
@@ -149,11 +196,15 @@ export function AdminMessagingClient({
       }
 
       setAlert({
-        type: "success",
+        type: result.failedCount ? "info" : "success",
         message:
           mode === "all"
-            ? `${channel} blast sent to ${result.recipientCount ?? 0} attendees.`
-            : `${channel} sent to ${selectedAttendee ? attendeeName(selectedAttendee) : "the selected attendee"}.`,
+            ? result.failedCount
+              ? `${channel} sent to ${result.recipientCount ?? 0} attendees; ${result.failedCount} deliveries were rejected.`
+              : `${channel} blast sent to ${result.recipientCount ?? 0} attendees.`
+            : result.failedCount
+              ? `${channel} could not be delivered to the selected attendee.`
+              : `${channel} sent to ${selectedAttendee ? attendeeName(selectedAttendee) : "the selected attendee"}.`,
       });
       setMessage("");
     } catch (error) {
@@ -218,17 +269,125 @@ export function AdminMessagingClient({
           <div className="admin-sms-summary-grid">
             <div className="admin-sms-summary">
               <small>Recipient scope</small>
-              <strong>{mode === "all" ? "All attendees" : "One attendee"}</strong>
+              <strong>
+                {mode === "all"
+                  ? hasBlastFilters
+                    ? "Filtered attendees"
+                    : "All attendees"
+                  : "One attendee"}
+              </strong>
             </div>
             <div className="admin-sms-summary">
-              <small>Available records</small>
-              <strong>{totalAttendees}</strong>
+              <small>{mode === "all" ? "Matching recipients" : "Available records"}</small>
+              <strong>{mode === "all" ? filteredAttendeeCount : totalAttendees}</strong>
             </div>
             <div className="admin-sms-summary">
               <small>Message length</small>
               <strong>{message.trim().length} chars</strong>
             </div>
           </div>
+
+          {mode === "all" ? (
+            <div className="admin-blast-filters">
+              <div className="admin-blast-filters-head">
+                <div>
+                  <strong>Filter blast recipients</strong>
+                  <span>Only matching attendees will receive this {channel} message.</span>
+                </div>
+                {hasBlastFilters ? (
+                  <button
+                    type="button"
+                    onClick={() => setBlastFilters(emptyAttendeeMessageFilters)}
+                  >
+                    <X /> Clear filters
+                  </button>
+                ) : null}
+              </div>
+              <div className="admin-blast-filter-grid">
+                <label>
+                  Attendance
+                  <select
+                    value={blastFilters.attendanceStatus}
+                    onChange={(event) =>
+                      updateBlastFilter(
+                        "attendanceStatus",
+                        event.target.value as AttendeeMessageFilters["attendanceStatus"],
+                      )
+                    }
+                  >
+                    <option value="">All attendance statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="registered">Registered</option>
+                    <option value="confirmed">Confirmed</option>
+                  </select>
+                </label>
+                <label>
+                  Registration
+                  <select
+                    value={blastFilters.registrationStatus}
+                    onChange={(event) =>
+                      updateBlastFilter(
+                        "registrationStatus",
+                        event.target.value as AttendeeMessageFilters["registrationStatus"],
+                      )
+                    }
+                  >
+                    <option value="">All registration statuses</option>
+                    <option value="pending-verification">Pending verification</option>
+                    <option value="verified">Verified</option>
+                  </select>
+                </label>
+                <label>
+                  Country
+                  <select
+                    value={blastFilters.country}
+                    onChange={(event) => updateBlastFilter("country", event.target.value)}
+                  >
+                    <option value="">All countries</option>
+                    {filterOptions.countries.map((country) => (
+                      <option value={country} key={country}>{country}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  City
+                  <select
+                    value={blastFilters.city}
+                    onChange={(event) => updateBlastFilter("city", event.target.value)}
+                  >
+                    <option value="">All cities</option>
+                    {filterOptions.cities.map((city) => (
+                      <option value={city} key={city}>{city}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Gender
+                  <select
+                    value={blastFilters.gender}
+                    onChange={(event) => updateBlastFilter("gender", event.target.value)}
+                  >
+                    <option value="">All genders</option>
+                    {filterOptions.genders.map((gender) => (
+                      <option value={gender} key={gender}>{gender}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Organisation
+                  <select
+                    value={blastFilters.company}
+                    onChange={(event) => updateBlastFilter("company", event.target.value)}
+                  >
+                    <option value="">All organisations</option>
+                    {filterOptions.companies.map((company) => (
+                      <option value={company} key={company}>{company}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
+          ) : null}
 
           {mode === "single" ? (
             <div className="admin-sms-pick-card">
@@ -290,10 +449,19 @@ export function AdminMessagingClient({
             <button
               className="btn btn-accent"
               type="submit"
-              disabled={isSending || !message.trim() || (mode === "single" && !selectedAttendeeId)}
+              disabled={
+                isSending ||
+                !message.trim() ||
+                (mode === "single" && !selectedAttendeeId) ||
+                (mode === "all" && filteredAttendeeCount === 0)
+              }
             >
               {isSending ? <LoaderCircle className="spin" /> : <Send />}
-              {isSending ? "Sending..." : mode === "all" ? `Send ${channel} blast` : `Send attendee ${channel}`}
+              {isSending
+                ? "Sending..."
+                : mode === "all"
+                  ? `Send ${channel} blast to ${filteredAttendeeCount}`
+                  : `Send attendee ${channel}`}
             </button>
           </form>
 

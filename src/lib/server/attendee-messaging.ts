@@ -2,6 +2,7 @@ import { parsePhoneNumberFromString } from "libphonenumber-js";
 import type { AttendeeRecord } from "@/src/lib/server/strapi-admin";
 import { attendeeSmsAddress, sendBelioSms } from "@/src/lib/server/belio-sms";
 import { createVisitorPassPdf } from "@/src/lib/server/visitor-pass";
+import { eventWelcomePlainText } from "@/src/lib/server/event-welcome";
 
 type RegistrationAttendee = Pick<
   AttendeeRecord,
@@ -113,7 +114,15 @@ async function createMetaWhatsAppMessage(to: string, message: Record<string, unk
     cache: "no-store",
   });
 
-  return parseMetaResponse(response);
+  const result = await parseMetaResponse(response) as {
+    messages?: Array<{ id?: string }>;
+  };
+
+  if (!result.messages?.some((item) => typeof item.id === "string" && item.id.length > 0)) {
+    throw new Error("Meta accepted the WhatsApp request without returning a message ID.");
+  }
+
+  return result;
 }
 
 async function uploadRegistrationVisitorPass(attendee: RegistrationAttendee) {
@@ -205,6 +214,27 @@ export async function sendWhatsAppText(message: string, recipient: string) {
 export async function sendRegistrationSms(attendee: RegistrationAttendee) {
   const recipient = attendeeSmsAddress(attendee);
   return sendBelioSms(registrationSmsMessage(attendee.registrationReference), [recipient]);
+}
+
+export async function sendEventWelcomeSms(
+  attendee: RegistrationAttendee,
+  welcomeMessage: string,
+) {
+  const recipient = attendeeSmsAddress(attendee);
+  return sendBelioSms(
+    eventWelcomePlainText(attendee.firstName, welcomeMessage),
+    [recipient],
+  );
+}
+
+export async function sendEventWelcomeWhatsApp(
+  attendee: RegistrationAttendee,
+  welcomeMessage: string,
+) {
+  return sendWhatsAppText(
+    eventWelcomePlainText(attendee.firstName, welcomeMessage),
+    attendeeWhatsAppAddress(attendee),
+  );
 }
 
 export async function sendAttendeeRegistrationMessages(attendee: RegistrationAttendee) {

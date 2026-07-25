@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { AdminSmsClient } from "@/src/components/admin-sms-client";
 import { getAdminSession } from "@/src/lib/server/admin-session";
-import { listAttendees, type AttendeeRecord } from "@/src/lib/server/strapi-admin";
+import { listAllAttendees, type AttendeeRecord } from "@/src/lib/server/strapi-admin";
 
 export const metadata: Metadata = { title: "Admin SMS - Agri Africa" };
 
@@ -18,14 +18,8 @@ export default async function AdminSmsPage() {
   let initialError = "";
 
   try {
-    const result = await listAttendees(session.user.strapiJwt, {
-      page: 1,
-      pageSize: 20,
-      search: "",
-    });
-
-    attendees = result.attendees;
-    totalAttendees = result.pagination.total;
+    attendees = await listAllAttendees(session.user.strapiJwt);
+    totalAttendees = attendees.length;
   } catch (error) {
     initialError =
       error instanceof Error

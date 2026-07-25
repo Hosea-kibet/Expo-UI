@@ -133,6 +133,10 @@ async function sendBelioSmsRequest(payload: BelioSmsPayload) {
     throw new Error(parsed?.message || text || "Unable to send SMS with Belio.");
   }
 
+  if (parsed?.success === false) {
+    throw new Error(parsed.message || "Belio rejected the SMS.");
+  }
+
   return parsed ?? {};
 }
 

@@ -749,20 +749,25 @@ export default function HomepageClient({
               ))}
             </div>
           </div>
-          <div className="contact reveal-up" style={{ transitionDelay: ".12s" }}>
+          <div className="contact homepage-footer-contact reveal-up" style={{ transitionDelay: ".12s" }}>
             <div className="item">
               <Phone style={{ width: 16, height: 16 }} /> {initialData.phone}
             </div>
             <div className="item">
               <Mail style={{ width: 16, height: 16 }} /> {initialData.email}
             </div>
-            <div className="item">
-              <MapPin style={{ width: 16, height: 16 }} /> {initialData.address}
+            <div className="item homepage-footer-location">
+              <MapPin style={{ width: 16, height: 16 }} />
+              <span>{initialData.address}</span>
+              <span className="footer-contact-separator" aria-hidden="true">·</span>
+              <Link className="footer-contact-legal" href="/terms-and-conditions">
+                Terms and Conditions
+              </Link>
             </div>
           </div>
-          <div className="legal reveal-up" style={{ transitionDelay: ".22s" }}>
+          <div className="legal">
             <span>{initialData.legalLeft}</span>
-            <span><LegalFooterLinks /></span>
+            <span aria-label="Legal links"><LegalFooterLinks /></span>
             <span>{initialData.legalRight}</span>
           </div>
         </div>

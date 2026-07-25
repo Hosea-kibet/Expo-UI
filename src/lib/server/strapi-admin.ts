@@ -44,6 +44,16 @@ export type ContactEnquiryRecord = {
   notificationError?: string | null;
 };
 
+export type WelcomeMessageRecord = {
+  id: number;
+  documentId: string;
+  name: string;
+  message: string;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 type StrapiSingleResponse<T> = { data: T | null };
 type StrapiCollectionResponse<T> = { data: T[] };
 type StrapiPaginatedCollectionResponse<T> = {
@@ -283,6 +293,22 @@ export async function getAttendeeByEmail(email: string) {
   return result.data[0] ?? null;
 }
 
+export async function getActiveWelcomeMessage() {
+  const response = await fetch(`${getStrapiAdminBaseUrl()}/welcome-messages/active`, {
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Active welcome message request failed with ${response.status}.`);
+  }
+
+  const result = (await response.json()) as StrapiSingleResponse<WelcomeMessageRecord>;
+  return result.data;
+}
+
 export async function getAttendeeByReference(reference: string, jwt?: string) {
   const params = new URLSearchParams({
     "filters[registrationReference][$eq]": reference,
@@ -344,6 +370,26 @@ export async function listAttendees(
     pagination,
     search: normalizedSearch,
   };
+}
+
+export async function listAllAttendees(jwt?: string) {
+  const attendees: AttendeeRecord[] = [];
+  let page = 1;
+  let pageCount = 1;
+
+  do {
+    const result = await listAttendees(jwt, {
+      page,
+      pageSize: 100,
+      search: "",
+    });
+
+    attendees.push(...result.attendees);
+    pageCount = result.pagination.pageCount;
+    page += 1;
+  } while (page <= pageCount);
+
+  return attendees;
 }
 
 export async function createAttendee(data: Record<string, unknown>) {

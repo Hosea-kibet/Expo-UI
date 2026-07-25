@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { attendeeSmsAddress, sendBelioSms } from "@/src/lib/server/belio-sms";
 import {
   getAttendeeByDocumentId,
-  listAttendees,
+  listAllAttendees,
   type AttendeeRecord,
 } from "@/src/lib/server/strapi-admin";
 import { getAdminTokenFromRequest } from "@/src/lib/server/admin-session";
+import {
+  filterAttendeesForMessage,
+  type AttendeeMessageFilters,
+} from "@/src/lib/attendee-message-filters";
 
 function unauthorized() {
   return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
@@ -29,26 +33,6 @@ function uniqueRecipientAddresses(attendees: AttendeeRecord[]) {
   return addresses;
 }
 
-async function listAllAttendees() {
-  const attendees: AttendeeRecord[] = [];
-  let page = 1;
-  let pageCount = 1;
-
-  do {
-    const result = await listAttendees(undefined, {
-      page,
-      pageSize: 100,
-      search: "",
-    });
-
-    attendees.push(...result.attendees);
-    pageCount = result.pagination.pageCount;
-    page += 1;
-  } while (page <= pageCount);
-
-  return attendees;
-}
-
 export async function POST(request: NextRequest) {
   const admin = await getAdminTokenFromRequest(request);
 
@@ -61,6 +45,7 @@ export async function POST(request: NextRequest) {
       mode?: "all" | "single";
       attendeeDocumentId?: string;
       message?: string;
+      filters?: Partial<AttendeeMessageFilters>;
     };
 
     const mode = body.mode === "single" ? "single" : "all";
@@ -95,7 +80,17 @@ export async function POST(request: NextRequest) {
 
       recipients = [attendee];
     } else {
-      recipients = await listAllAttendees();
+      recipients = filterAttendeesForMessage(
+        await listAllAttendees(),
+        body.filters,
+      );
+    }
+
+    if (recipients.length === 0) {
+      return NextResponse.json(
+        { ok: false, error: "No attendees match the selected blast filters." },
+        { status: 400 },
+      );
     }
 
     const addresses = uniqueRecipientAddresses(recipients);
