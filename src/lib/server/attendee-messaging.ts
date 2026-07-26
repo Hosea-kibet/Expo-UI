@@ -231,10 +231,31 @@ export async function sendEventWelcomeWhatsApp(
   attendee: RegistrationAttendee,
   welcomeMessage: string,
 ) {
-  return sendWhatsAppText(
-    eventWelcomePlainText(attendee.firstName, welcomeMessage),
-    attendeeWhatsAppAddress(attendee),
-  );
+  const templateName = process.env.META_WHATSAPP_WELCOME_TEMPLATE_NAME?.trim();
+  const languageCode =
+    process.env.META_WHATSAPP_TEMPLATE_LANGUAGE?.trim() ||
+    "en";
+
+  if (!templateName) {
+    throw new Error("META_WHATSAPP_WELCOME_TEMPLATE_NAME must be configured.");
+  }
+
+  return createMetaWhatsAppMessage(attendeeWhatsAppAddress(attendee), {
+    type: "template",
+    template: {
+      name: templateName,
+      language: { code: languageCode },
+      components: [
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: attendee.firstName.trim() || "there" },
+            { type: "text", text: welcomeMessage.trim() },
+          ],
+        },
+      ],
+    },
+  });
 }
 
 export async function sendAttendeeRegistrationMessages(attendee: RegistrationAttendee) {
