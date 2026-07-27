@@ -25,7 +25,7 @@ type ExpoPageSnapshot = {
     copy: string;
   }>;
   overviewCategories: string[];
-  floorPlanUrl: string;
+  floorPlanSrc: string;
 };
 
 type ProgrammeDay = {
@@ -343,14 +343,7 @@ export async function getExpoCmsSnapshot(): Promise<ExpoCmsSnapshot> {
       overviewGuests: normalizeOverviewGuests(expoPageRecord?.overviewGuests),
       overviewObjectives: normalizeOverviewObjectives(expoPageRecord?.overviewObjectives),
       overviewCategories: normalizeOverviewCategories(expoPageRecord?.overviewCategories),
-      floorPlanUrl:
-        extractMediaUrl(expoPageRecord?.floorPlan) ??
-        normalizeAssetUrl(
-          expoPageRecord && typeof expoPageRecord.floorPlanUrl === "string"
-            ? expoPageRecord.floorPlanUrl
-            : undefined,
-        ) ??
-        "",
+      floorPlanSrc: extractMediaUrl(expoPageRecord?.floorPlan) ?? "",
     },
     exhibitors,
     supportUnits,
@@ -364,7 +357,7 @@ export async function getExpoCmsSnapshot(): Promise<ExpoCmsSnapshot> {
   if (!snapshot.expoPage.theme) missingFields.push("expo-page.theme");
   if (!snapshot.expoPage.overviewIntro) missingFields.push("expo-page.overviewIntro");
   if (!snapshot.expoPage.overviewBody) missingFields.push("expo-page.overviewBody");
-  if (!snapshot.expoPage.floorPlanUrl) missingFields.push("expo-page.floorPlan");
+  if (!snapshot.expoPage.floorPlanSrc) missingFields.push("expo-page.floorPlan");
   if (snapshot.exhibitors.length === 0) missingFields.push("exhibitors");
   if (snapshot.supportUnits.length === 0) missingFields.push("support-units");
   if (snapshot.supportUnits.some((item) => !item.logoSrc)) missingFields.push("support-units.logo");

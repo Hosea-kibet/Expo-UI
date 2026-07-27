@@ -470,14 +470,14 @@ function SupportUnitsPanel({
 
 function FloorPlanPanel({
   active,
-  floorPlanUrl,
+  floorPlanSrc,
   venue,
 }: {
   active: boolean;
-  floorPlanUrl: string;
+  floorPlanSrc: string;
   venue: string;
 }) {
-  const isPdf = /\.pdf(?:[?#]|$)/i.test(floorPlanUrl);
+  const isPdf = /\.pdf(?:[?#]|$)/i.test(floorPlanSrc);
 
   return (
     <div className={`panel${active ? " active" : ""}`} id="panel-floorplan" style={{ display: active ? "block" : "none" }}>
@@ -497,20 +497,20 @@ function FloorPlanPanel({
         {isPdf ? (
           <object
             className="floor-plan-document"
-            data={floorPlanUrl}
+            data={floorPlanSrc}
             type="application/pdf"
             aria-label="2026 AIAE exhibition floor plan PDF"
           >
             <p>
               This browser cannot display the floor plan PDF. {" "}
-              <a href={floorPlanUrl} target="_blank" rel="noreferrer">
+              <a href={floorPlanSrc} target="_blank" rel="noreferrer">
                 Open the two-page floor plan
               </a>
               .
             </p>
           </object>
         ) : (
-          <img src={floorPlanUrl} alt="Top-down visual of the 2026 AIAE exhibition hall layout" />
+          <img src={floorPlanSrc} alt="Top-down visual of the 2026 AIAE exhibition hall layout" />
         )}
         <figcaption>
           <span>{isPdf ? "Two-page floor plan" : "Illustrative hall layout"}</span>
@@ -523,7 +523,7 @@ function FloorPlanPanel({
         <a className="btn btn-accent" href="#">
           Request a Booth
         </a>
-        <a className="btn btn-ghost" href={floorPlanUrl} target="_blank" rel="noreferrer">
+        <a className="btn btn-ghost" href={floorPlanSrc} target="_blank" rel="noreferrer">
           <Download /> {isPdf ? "Open Floor Plan PDF" : "Download Floor Plan"}
         </a>
       </div>
@@ -940,7 +940,7 @@ export default function ExpoClient({
             <ExhibitorsPanel active={activeTab === "exhibitors"} onOpenExhibitor={openExhibitor} exhibitorsData={exhibitorsData} />
             <ExhibitorDetailPanel active={activeTab === "exhibitor-detail"} exhibitor={selectedExhibitor} onBack={() => void changeTab("exhibitors")} />
             <SupportUnitsPanel active={activeTab === "support"} onOpenUnit={setSupportUnitModal} units={supportUnitsData} />
-            <FloorPlanPanel active={activeTab === "floorplan"} floorPlanUrl={expoPage.floorPlanUrl} venue={expoPage.venue} />
+            <FloorPlanPanel active={activeTab === "floorplan"} floorPlanSrc={expoPage.floorPlanSrc} venue={expoPage.venue} />
             <ProgrammePanel active={activeTab === "programme"} programmeDaysData={programmeDaysData} />
           </div>
         </div>

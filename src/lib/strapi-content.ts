@@ -61,7 +61,6 @@ export type ExpoPageContent = {
   overviewObjectives?: unknown;
   overviewCategories?: unknown;
   floorPlan?: unknown;
-  floorPlanUrl?: string;
 };
 
 export type ExhibitorContent = {
