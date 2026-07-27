@@ -83,6 +83,7 @@ export function VisitorRegistrationClient({
   const [selectedCountry, setSelectedCountry] = useState<CountryOption>(defaultCountryOption);
   const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
   const verificationRef = useRef<HTMLInputElement | null>(null);
+  const submissionLockRef = useRef(false);
   const countryCities = City.getCitiesOfCountry(selectedCountry.isoCode) ?? [];
   const cityOptions: CityOption[] = countryCities
     .map((city) => ({
@@ -209,6 +210,9 @@ export function VisitorRegistrationClient({
                 id="visitor-register-form"
                 onSubmit={async (event) => {
                   event.preventDefault();
+                  if (submissionLockRef.current) return;
+                  submissionLockRef.current = true;
+
                   const formData = new FormData(event.currentTarget);
                   const nextRegistration = sanitizeRegistrationInput({
                     gender: String(formData.get("gender") ?? ""),
@@ -258,6 +262,8 @@ export function VisitorRegistrationClient({
                         ? error.message
                         : "We couldn't send your verification code right now.",
                     );
+                  } finally {
+                    submissionLockRef.current = false;
                   }
                 }}
               >
@@ -436,6 +442,8 @@ export function VisitorRegistrationClient({
               id="register-verification"
               onSubmit={async (event) => {
                 event.preventDefault();
+                if (submissionLockRef.current) return;
+
                 if (!pendingRegistration) {
                   setSubmitState("error");
                   setSubmitError("Your registration details are missing. Please complete the form again.");
@@ -443,6 +451,7 @@ export function VisitorRegistrationClient({
                   return;
                 }
 
+                submissionLockRef.current = true;
                 const formData = new FormData(event.currentTarget);
                 const verificationCode = String(formData.get("verificationCode") ?? "").trim();
 
@@ -469,6 +478,8 @@ export function VisitorRegistrationClient({
                   setSubmitError(
                     "We couldn't complete your registration right now. Please try again in a moment.",
                   );
+                } finally {
+                  submissionLockRef.current = false;
                 }
               }}
             >

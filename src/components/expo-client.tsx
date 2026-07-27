@@ -382,6 +382,7 @@ function ExhibitorsPanel({
               className="ex-card"
               key={item.slug}
               href={`/2026-aiae-expo/${item.slug}`}
+              data-navigation-splash="off"
               onClick={(event) => {
                 event.preventDefault();
                 onOpenExhibitor(item.slug);

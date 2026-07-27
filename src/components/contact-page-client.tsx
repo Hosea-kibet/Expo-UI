@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, BadgeCheck, Mail, MapPin, Phone } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import { PagePreloader } from "@/src/components/page-preloader";
@@ -52,6 +52,7 @@ export function ContactPageClient({
     "Thank you. Our team will get back to you shortly.",
   );
   const [enquiryType, setEnquiryType] = useState("");
+  const submissionLockRef = useRef(false);
 
   useEffect(() => {
     setEnquiryType(getInitialEnquiryType(searchParams.get("enquiryType")));
@@ -60,10 +61,11 @@ export function ContactPageClient({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (isSubmitting) {
+    if (submissionLockRef.current) {
       return;
     }
 
+    submissionLockRef.current = true;
     setIsSubmitting(true);
     setErrorMessage("");
 
@@ -108,6 +110,7 @@ export function ContactPageClient({
           : "We could not send your enquiry right now. Please try again.",
       );
     } finally {
+      submissionLockRef.current = false;
       setIsSubmitting(false);
     }
   }
