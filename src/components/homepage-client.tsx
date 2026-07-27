@@ -756,13 +756,8 @@ export default function HomepageClient({
             <div className="item">
               <Mail style={{ width: 16, height: 16 }} /> {initialData.email}
             </div>
-            <div className="item homepage-footer-location">
-              <MapPin style={{ width: 16, height: 16 }} />
-              <span>{initialData.address}</span>
-              <span className="footer-contact-separator" aria-hidden="true">·</span>
-              <Link className="footer-contact-legal" href="/terms-and-conditions">
-                Terms and Conditions
-              </Link>
+            <div className="item">
+              <MapPin style={{ width: 16, height: 16 }} /> {initialData.address}
             </div>
           </div>
           <div className="legal">

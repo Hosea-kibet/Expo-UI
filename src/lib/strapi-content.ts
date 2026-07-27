@@ -10,7 +10,6 @@ export type StrapiEntity<T> = {
 } & T;
 
 export type HomepageContent = {
-  eyebrow?: string;
   title: string;
   highlightText?: string;
   subtitle?: string;

@@ -21,7 +21,6 @@ type HomepageOrganiser = {
 };
 
 export type HomepageSnapshot = {
-  eyebrow: string;
   title: string;
   highlightText: string;
   subtitle: string;
@@ -155,7 +154,6 @@ export async function getHomepageSnapshot(): Promise<HomepageSnapshot> {
   }
 
   const snapshot: HomepageSnapshot = {
-    eyebrow: typeof data.eyebrow === "string" ? data.eyebrow : "",
     title: typeof data.title === "string" ? data.title : "",
     highlightText: typeof data.highlightText === "string" ? data.highlightText : "",
     subtitle: typeof data.subtitle === "string" ? data.subtitle : "",
