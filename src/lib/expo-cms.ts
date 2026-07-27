@@ -147,12 +147,19 @@ function normalizeListItems(value: unknown) {
 }
 
 function normalizeSupportUnit(record: Record<string, unknown>): SupportUnit | null {
-  if (typeof record.slug !== "string" || typeof record.title !== "string") return null;
+  if (typeof record.title !== "string") return null;
 
   const logoSrc = extractMediaUrl(record.logo);
+  const id =
+    typeof record.documentId === "string"
+      ? record.documentId
+      : typeof record.id === "number"
+        ? String(record.id)
+        : "";
+  if (!id) return null;
 
   return {
-    slug: record.slug,
+    id,
     title: record.title,
     group:
       record.group === "Government" ||

@@ -24,7 +24,7 @@ export type Exhibitor = {
 export type SupportUnitGroup = "Government" | "Industry" | "Media";
 
 export type SupportUnit = {
-  slug: string;
+  id: string;
   title: string;
   group: SupportUnitGroup;
   country: string;

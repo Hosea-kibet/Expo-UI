@@ -85,7 +85,6 @@ export type ExhibitorContent = {
 
 export type SupportUnitContent = {
   title: string;
-  slug: string;
   group?: "Government" | "Industry" | "Media";
   country?: string;
   description?: string;

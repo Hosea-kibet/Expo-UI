@@ -444,7 +444,7 @@ function SupportUnitsPanel({
               {units
                 .filter((unit) => unit.group === group)
                 .map((unit) => (
-                  <button className="support-item" key={unit.slug} type="button" onClick={() => onOpenUnit(unit)}>
+                  <button className="support-item" key={unit.id} type="button" onClick={() => onOpenUnit(unit)}>
                     <span className={`support-logo ${group.toLowerCase()}`}>
                       <img src={unit.logoSrc} alt={unit.alt} />
                     </span>
