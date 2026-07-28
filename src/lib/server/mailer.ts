@@ -190,7 +190,7 @@ export async function sendRegistrationConfirmationEmail({
             </ul>
             <p style="margin:0 0 16px">You may present your pass on your mobile phone or as a printed copy.</p>
             <p style="margin:0 0 16px">We look forward to welcoming you to the 2026 AIAE and wish you a rewarding and enjoyable experience.</p>
-            <p style="margin:0 0 22px">If you require any assistance before the event, please contact the Secretariat.</p>
+            <p style="margin:0 0 22px">For further details or clarification, please contact the information below.</p>
 
             <p style="margin:0 0 4px">Kind regards,</p>
             <p style="margin:0 0 18px"><strong>Agri-Africa Exhibition Limited</strong></p>
