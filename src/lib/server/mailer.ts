@@ -1,6 +1,11 @@
 import nodemailer from "nodemailer";
 import QRCode from "qrcode";
 import {
+  EXPO_CONTACT_EMAIL,
+  EXPO_CONTACT_PHONE,
+  EXPO_CONTACT_PHONE_LINK,
+} from "@/src/lib/site-contact";
+import {
   eventWelcomeContent,
   eventWelcomePlainText,
 } from "@/src/lib/server/event-welcome";
@@ -144,8 +149,8 @@ export async function sendRegistrationConfirmationEmail({
       "Kind regards,",
       "Agri-Africa Exhibition Limited",
       "www.agriexpo.africa",
-      "info@agriexpo.africa",
-      "+254 710883625",
+      EXPO_CONTACT_EMAIL,
+      EXPO_CONTACT_PHONE,
     ].join("\n"),
     attachments: [
       {
@@ -196,8 +201,8 @@ export async function sendRegistrationConfirmationEmail({
             <p style="margin:0 0 18px"><strong>Agri-Africa Exhibition Limited</strong></p>
             <p style="margin:0;color:#425466">
               🌐 <a href="https://www.agriexpo.africa" style="color:#147b9e">www.agriexpo.africa</a><br />
-              ✉ <a href="mailto:info@agriexpo.africa" style="color:#147b9e">info@agriexpo.africa</a><br />
-              ☎ <a href="tel:+254710883625" style="color:#147b9e">+254 710883625</a>
+              ✉ <a href="mailto:${EXPO_CONTACT_EMAIL}" style="color:#147b9e">${EXPO_CONTACT_EMAIL}</a><br />
+              ☎ <a href="tel:${EXPO_CONTACT_PHONE_LINK}" style="color:#147b9e">${EXPO_CONTACT_PHONE}</a>
             </p>
             <p style="margin:24px 0 0;font-style:italic;color:#425466">Gathering Global Agricultural Wisdom to Promote Modernization of African Agriculture.</p>
           </div>

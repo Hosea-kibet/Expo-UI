@@ -5,8 +5,8 @@ import {
 } from "@/src/lib/contact-enquiry";
 import { sendContactEnquiryNotificationEmail } from "@/src/lib/server/mailer";
 import { createContactEnquiry } from "@/src/lib/server/strapi-admin";
+import { EXPO_CONTACT_EMAIL } from "@/src/lib/site-contact";
 
-const CONTACT_NOTIFICATION_EMAIL = "expo@agriexpo.africa";
 const CONTACT_VALIDATION_ERRORS = new Set([
   "Full name is required.",
   "Email address is required.",
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     try {
       await sendContactEnquiryNotificationEmail({
-        recipientEmail: CONTACT_NOTIFICATION_EMAIL,
+        recipientEmail: EXPO_CONTACT_EMAIL,
         name: enquiry.name,
         email: enquiry.email,
         enquiryType: enquiry.enquiryType,

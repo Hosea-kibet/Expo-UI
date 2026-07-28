@@ -2,6 +2,10 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument, PDFPage, PDFFont, StandardFonts, rgb } from "pdf-lib";
 import QRCode from "qrcode";
+import {
+  EXPO_CONTACT_EMAIL,
+  EXPO_CONTACT_PHONE,
+} from "@/src/lib/site-contact";
 
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
@@ -9,8 +13,6 @@ const MARGIN = 32;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 const EVENT_THEME =
   "Gathering Global Agricultural Technologies and Innovation to Advance Modernization of African Agriculture";
-const ASSISTANCE_EMAIL = "expo@agriexpo.africa";
-const ASSISTANCE_PHONE = "+254 790 888 333";
 const AIAE_LOGO_PATH = path.join(
   process.cwd(),
   "public",
@@ -236,8 +238,8 @@ export async function createVisitorPassPdf(details: VisitorPassDetails) {
   page.drawText("NEED ASSISTANCE?", { x: 54, y: 145, font: bold, size: 9, color: COLORS.orange });
   page.drawText("Agri-Africa Exhibition Limited", { x: 54, y: 127, font: bold, size: 10.5, color: COLORS.green });
   page.drawText("Website: www.agriexpo.africa", { x: 54, y: 106, font: regular, size: 9, color: COLORS.ink });
-  page.drawText(`Email: ${ASSISTANCE_EMAIL}`, { x: 54, y: 91, font: regular, size: 9, color: COLORS.ink });
-  page.drawText(`Phone: ${ASSISTANCE_PHONE}`, { x: 54, y: 76, font: regular, size: 9, color: COLORS.ink });
+  page.drawText(`Email: ${EXPO_CONTACT_EMAIL}`, { x: 54, y: 91, font: regular, size: 9, color: COLORS.ink });
+  page.drawText(`Phone: ${EXPO_CONTACT_PHONE}`, { x: 54, y: 76, font: regular, size: 9, color: COLORS.ink });
 
   // Pass validity notice
   page.drawLine({ start: { x: MARGIN, y: 64 }, end: { x: PAGE_WIDTH - MARGIN, y: 64 }, thickness: 1, color: COLORS.green });

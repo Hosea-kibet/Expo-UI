@@ -1,4 +1,8 @@
 import { getHomepageContent } from "@/src/lib/strapi-content";
+import {
+  EXPO_CONTACT_EMAIL,
+  EXPO_CONTACT_PHONE,
+} from "@/src/lib/site-contact";
 import { normalizeStrapiAssetUrl } from "@/src/lib/strapi-media";
 
 type HomepagePartner = {
@@ -178,8 +182,8 @@ export async function getHomepageSnapshot(): Promise<HomepageSnapshot> {
     footerBrandCopy: typeof data.footerBrandCopy === "string" ? data.footerBrandCopy : "",
     partners: normalizePartners(data.partners),
     socialLinks: normalizeSocialLinks(data.socialLinks),
-    phone: typeof data.phone === "string" ? data.phone : "",
-    email: typeof data.email === "string" ? data.email : "",
+    phone: EXPO_CONTACT_PHONE,
+    email: EXPO_CONTACT_EMAIL,
     address: typeof data.address === "string" ? data.address : "",
     legalLeft: typeof data.legalLeft === "string" ? data.legalLeft : "",
     legalRight: typeof data.legalRight === "string" ? data.legalRight : "",
