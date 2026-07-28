@@ -222,7 +222,7 @@ export async function sendEventWelcomeSms(
 ) {
   const recipient = attendeeSmsAddress(attendee);
   return sendBelioSms(
-    eventWelcomePlainText(attendee.firstName, welcomeMessage),
+    eventWelcomePlainText(attendee.firstName, attendee.lastName, welcomeMessage),
     [recipient],
   );
 }
@@ -249,7 +249,7 @@ export async function sendEventWelcomeWhatsApp(
         {
           type: "body",
           parameters: [
-            { type: "text", text: attendee.firstName.trim() || "there" },
+            { type: "text", text: `${attendee.firstName} ${attendee.lastName}`.trim() || "there" },
             { type: "text", text: welcomeMessage.trim() },
           ],
         },

@@ -1,10 +1,23 @@
-import { PDFDocument, PDFPage, PDFFont, StandardFonts, degrees, rgb } from "pdf-lib";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { PDFDocument, PDFPage, PDFFont, StandardFonts, rgb } from "pdf-lib";
 import QRCode from "qrcode";
 
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
 const MARGIN = 32;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
+const EVENT_THEME =
+  "Gathering Global Agricultural Technologies and Innovation to Advance Modernization of African Agriculture";
+const ASSISTANCE_EMAIL = "expo@agriexpo.africa";
+const ASSISTANCE_PHONE = "+254 790 888 333";
+const AIAE_LOGO_PATH = path.join(
+  process.cwd(),
+  "public",
+  "assets",
+  "fonts",
+  "3. 2026 AIAE.png",
+);
 
 const COLORS = {
   green: rgb(23 / 255, 52 / 255, 34 / 255),
@@ -99,27 +112,12 @@ function drawLabelValue(
   });
 }
 
-function drawAiaeMark(page: PDFPage, x: number, y: number, bold: PDFFont) {
-  page.drawRectangle({
-    x,
-    y,
-    width: 91,
-    height: 61,
-    color: COLORS.paper,
-    borderColor: COLORS.leaf,
-    borderWidth: 2,
-  });
-  page.drawEllipse({ x: x + 17, y: y + 42, xScale: 9, yScale: 15, rotate: degrees(-30), color: COLORS.leaf });
-  page.drawLine({ start: { x: x + 12, y: y + 30 }, end: { x: x + 23, y: y + 50 }, thickness: 1.5, color: COLORS.green });
-  page.drawText("AIAE", { x: x + 31, y: y + 31, font: bold, size: 20, color: COLORS.green });
-  page.drawText("AFRICA 2026", { x: x + 10, y: y + 10, font: bold, size: 7, color: COLORS.orange });
-}
-
 export async function createVisitorPassPdf(details: VisitorPassDetails) {
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const aiaeLogo = await pdf.embedPng(await readFile(AIAE_LOGO_PATH));
 
   pdf.setTitle(`2026 AIAE Visitor Pass - ${details.reference_id}`);
   pdf.setAuthor("Agri-Africa Exhibition Limited");
@@ -140,11 +138,20 @@ export async function createVisitorPassPdf(details: VisitorPassDetails) {
 
   const headerBottom = 690;
   page.drawRectangle({ x: MARGIN, y: headerBottom, width: CONTENT_WIDTH, height: 119.9, color: COLORS.green });
-  drawAiaeMark(page, 52, 735, bold);
+  page.drawRectangle({
+    x: 52,
+    y: 747,
+    width: 126,
+    height: 40,
+    color: COLORS.paper,
+    borderColor: COLORS.leaf,
+    borderWidth: 1.5,
+  });
+  page.drawImage(aiaeLogo, { x: 58, y: 754, width: 114, height: 25 });
 
   page.drawText("2026 AFRICA INTERNATIONAL", { x: 196, y: 784, font: bold, size: 14, color: COLORS.paper });
   page.drawText("AGRICULTURAL EXPO", { x: 196, y: 762, font: bold, size: 18, color: COLORS.leaf });
-  drawWrappedText(page, "Gathering Global Agricultural Wisdom to Promote Modernization of African Agriculture", {
+  drawWrappedText(page, EVENT_THEME, {
     x: 52,
     y: 715,
     font: regular,
@@ -195,7 +202,7 @@ export async function createVisitorPassPdf(details: VisitorPassDetails) {
   page.drawRectangle({ x: MARGIN, y: 324, width: CONTENT_WIDTH, height: 162, color: rgb(249 / 255, 251 / 255, 249 / 255) });
   page.drawText("EVENT DETAILS", { x: 54, y: 464, font: bold, size: 10, color: COLORS.orange });
   page.drawText("THEME", { x: 54, y: 443, font: bold, size: 7.5, color: COLORS.muted });
-  drawWrappedText(page, "Gathering Global Agricultural Wisdom to Promote Modernization of African Agriculture", {
+  drawWrappedText(page, EVENT_THEME, {
     x: 54, y: 428, font: bold, size: 10.5, maxWidth: 360, lineHeight: 13, color: COLORS.green,
   });
   page.drawText("DATES", { x: 54, y: 395, font: bold, size: 7.5, color: COLORS.muted });
@@ -229,8 +236,8 @@ export async function createVisitorPassPdf(details: VisitorPassDetails) {
   page.drawText("NEED ASSISTANCE?", { x: 54, y: 145, font: bold, size: 9, color: COLORS.orange });
   page.drawText("Agri-Africa Exhibition Limited", { x: 54, y: 127, font: bold, size: 10.5, color: COLORS.green });
   page.drawText("Website: www.agriexpo.africa", { x: 54, y: 106, font: regular, size: 9, color: COLORS.ink });
-  page.drawText("Email: info@agriexpo.africa", { x: 54, y: 91, font: regular, size: 9, color: COLORS.ink });
-  page.drawText("Phone: +254 710 883 625", { x: 54, y: 76, font: regular, size: 9, color: COLORS.ink });
+  page.drawText(`Email: ${ASSISTANCE_EMAIL}`, { x: 54, y: 91, font: regular, size: 9, color: COLORS.ink });
+  page.drawText(`Phone: ${ASSISTANCE_PHONE}`, { x: 54, y: 76, font: regular, size: 9, color: COLORS.ink });
 
   // Pass validity notice
   page.drawLine({ start: { x: MARGIN, y: 64 }, end: { x: PAGE_WIDTH - MARGIN, y: 64 }, thickness: 1, color: COLORS.green });

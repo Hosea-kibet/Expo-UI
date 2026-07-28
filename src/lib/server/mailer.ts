@@ -139,7 +139,7 @@ export async function sendRegistrationConfirmationEmail({
       "You may present your pass on your mobile phone or as a printed copy.",
       "",
       "We look forward to welcoming you to the 2026 AIAE and wish you a rewarding and enjoyable experience.",
-      "If you require any assistance before the event, please contact the Secretariat.",
+      "For further details or clarification, please contact the information below.",
       "",
       "Kind regards,",
       "Agri-Africa Exhibition Limited",
@@ -210,25 +210,27 @@ export async function sendRegistrationConfirmationEmail({
 export async function sendEventWelcomeEmail({
   email,
   firstName,
+  lastName,
   welcomeMessage,
 }: {
   email: string;
   firstName: string;
+  lastName: string;
   welcomeMessage: string;
 }) {
   const { config, transporter } = createMailerTransport();
 
-  const content = eventWelcomeContent(firstName, welcomeMessage);
+  const content = eventWelcomeContent(firstName, lastName, welcomeMessage);
   const safeEyebrow = escapeHtml(content.eyebrow);
   const safeHeading = escapeHtml(content.heading);
-  const safeIntroduction = escapeHtml(content.introduction);
+  const safeIntroduction = escapeHtml(content.introduction).replaceAll("\n", "<br />");
   const safeWelcomeMessage = escapeHtml(content.cmsMessage).replaceAll("\n", "<br />");
 
   await transporter.sendMail({
     from: config.from,
     to: email,
     subject: "Welcome to Agri Africa Expo",
-    text: eventWelcomePlainText(firstName, welcomeMessage),
+    text: eventWelcomePlainText(firstName, lastName, welcomeMessage),
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.6;color:#173422;background:#f4efe4;padding:32px">
         <div style="max-width:560px;margin:0 auto;background:#fffdf8;border-radius:20px;padding:32px">

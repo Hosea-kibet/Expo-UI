@@ -17,7 +17,6 @@ import {
   Mail,
   Map,
   MapPin,
-  MessageSquare,
   Phone,
   RotateCcw,
   Search,
@@ -136,9 +135,6 @@ function ExhibitorDetailPanel({
         <a className="btn btn-secondary" href={brochureHref} download={`${exhibitor.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-brochure.txt`}>
           <Download /> Download Brochure
         </a>
-        <Link className="btn btn-accent" href={`/members-portal?company=${encodeURIComponent(exhibitor.name)}`}>
-          <MessageSquare /> Interact
-        </Link>
       </div>
     </div>
   );

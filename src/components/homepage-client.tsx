@@ -69,7 +69,7 @@ export default function HomepageClient({
     let mounted = true;
     const cleanup: Array<() => void> = [];
     const previousBodyClassName = document.body.className;
-    document.body.className = "";
+    document.body.className = "homepage-page";
 
     async function init() {
       const { gsap } = (await import("gsap")) as { gsap: typeof import("gsap").default };

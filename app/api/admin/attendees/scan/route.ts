@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
           sendEventWelcomeEmail({
             email: confirmedAttendee.email,
             firstName: confirmedAttendee.firstName,
+            lastName: confirmedAttendee.lastName,
             welcomeMessage,
           }),
           sendEventWelcomeSms(confirmedAttendee, welcomeMessage),

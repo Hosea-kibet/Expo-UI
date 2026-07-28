@@ -5640,38 +5640,30 @@ footer.site .legal a:hover {
 }
 
 @media (max-width: 650px) {
-  .register-nav,
   .register-shell {
     width: calc(100% - 32px);
   }
 
   .register-nav {
-    min-height: 76px;
+    display: none;
   }
 
-  .register-nav img {
-    width: 124px;
-  }
-
-  .register-nav-actions span {
+  .register-back,
+  .register-event-copy {
     display: none;
   }
 
   .register-shell {
-    padding: 34px 0 52px;
-  }
-
-  .register-back {
-    margin-bottom: 34px;
-  }
-
-  .register-event h1 {
-    font-size: 36px;
+    padding: 6px 0 52px;
   }
 
   .register-event-details,
   .register-fields.two-col {
     grid-template-columns: 1fr;
+  }
+
+  .register-event-details {
+    margin-top: 0;
   }
 
   .register-fields .field-full {
@@ -5701,6 +5693,25 @@ footer.site .legal a:hover {
 
   .register-success-actions {
     display: grid;
+  }
+}
+
+@media (max-width: 600px) {
+  .homepage-page header.nav {
+    display: none;
+  }
+
+  .homepage-page .hero-main {
+    padding-top: 16px;
+  }
+
+  .homepage-page .hero-copy {
+    min-height: 0;
+    justify-content: flex-start;
+  }
+
+  .homepage-page .hero .grid {
+    gap: 72px;
   }
 }
 
