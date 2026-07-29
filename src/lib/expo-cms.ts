@@ -92,10 +92,10 @@ function extractMediaUrl(media: unknown) {
 }
 
 export function normalizeExhibitor(record: Record<string, unknown>): Exhibitor | null {
-  if (typeof record.slug !== "string" || typeof record.name !== "string") return null;
+  if (typeof record.id !== "number" || typeof record.name !== "string") return null;
 
   return {
-    slug: record.slug,
+    id: record.id,
     logo:
       typeof record.logo === "string"
         ? record.logo
@@ -370,9 +370,11 @@ export async function getExpoCmsSnapshot(): Promise<ExpoCmsSnapshot> {
   return snapshot;
 }
 
-export async function getExpoExhibitorBySlug(slug: string) {
+export async function getExpoExhibitorById(id: string | number) {
   const snapshot = await getExpoCmsSnapshot();
-  return snapshot.exhibitors.find((item) => item.slug === slug) ?? null;
+  const exhibitorId = typeof id === "number" ? id : Number(id);
+  if (!Number.isInteger(exhibitorId) || exhibitorId <= 0) return null;
+  return snapshot.exhibitors.find((item) => item.id === exhibitorId) ?? null;
 }
 
 export async function getFilteredExhibitors({

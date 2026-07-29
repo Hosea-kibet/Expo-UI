@@ -1,14 +1,14 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ExhibitorDetailClient } from "@/src/components/exhibitor-detail-client";
-import { getExpoCmsSnapshot, getExpoExhibitorBySlug } from "@/src/lib/expo-cms";
+import { getExpoCmsSnapshot, getExpoExhibitorById } from "@/src/lib/expo-cms";
 import { getHomepageSnapshot } from "@/src/lib/homepage-cms";
 
-type Params = { slug: string };
+type Params = { id: string };
 
 export async function generateExhibitorStaticParams() {
   const snapshot = await getExpoCmsSnapshot();
-  return snapshot.exhibitors.map((item) => ({ slug: item.slug }));
+  return snapshot.exhibitors.map((item) => ({ id: String(item.id) }));
 }
 
 export async function generateExhibitorMetadata({
@@ -16,8 +16,8 @@ export async function generateExhibitorMetadata({
 }: {
   params: Promise<Params>;
 }): Promise<Metadata> {
-  const { slug } = await params;
-  const exhibitor = await getExpoExhibitorBySlug(slug);
+  const { id } = await params;
+  const exhibitor = await getExpoExhibitorById(id);
   if (!exhibitor) return { title: "Exhibitor - Agri Africa" };
   return { title: `${exhibitor.name} - 2026 AIAE Expo` };
 }
@@ -27,9 +27,9 @@ export async function ExhibitorDetailPageContent({
 }: {
   params: Promise<Params>;
 }) {
-  const { slug } = await params;
+  const { id } = await params;
   const [exhibitor, expoSnapshot, homepage] = await Promise.all([
-    getExpoExhibitorBySlug(slug),
+    getExpoExhibitorById(id),
     getExpoCmsSnapshot(),
     getHomepageSnapshot(),
   ]);

@@ -7,10 +7,10 @@ import {
 export const generateStaticParams = generateExhibitorStaticParams;
 export const generateMetadata = generateExhibitorMetadata;
 
-export default function ExhibitorDetailPage({
+export default function ExhibitorDetailAliasPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ id: string }>;
 }) {
   return <ExhibitorDetailPageContent params={params} />;
 }

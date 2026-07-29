@@ -2,7 +2,7 @@ export type ExhibitorCategory = "machinery" | "technology" | "produce" | "health
 export type ExhibitorCountryFilter = "china" | "kenya" | "africa";
 
 export type Exhibitor = {
-  slug: string;
+  id: number;
   logo: string;
   logoSrc: string;
   booth: string;

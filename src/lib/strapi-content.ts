@@ -65,7 +65,6 @@ export type ExpoPageContent = {
 
 export type ExhibitorContent = {
   name: string;
-  slug: string;
   logo?: unknown;
   booth?: string;
   country?: string;

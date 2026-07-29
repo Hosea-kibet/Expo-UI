@@ -249,7 +249,7 @@ function ExhibitorsPanel({
   exhibitorsData,
 }: {
   active: boolean;
-  onOpenExhibitor: (slug: string) => void;
+  onOpenExhibitor: (id: number) => void;
   exhibitorsData: Exhibitor[];
 }) {
   const [query, setQuery] = useState("");
@@ -376,12 +376,12 @@ function ExhibitorsPanel({
           {filtered.map((item) => (
             <a
               className="ex-card"
-              key={item.slug}
-              href={`/2026-aiae-expo/${item.slug}`}
+              key={item.id}
+              href={`/2026-aiae-expo/${item.id}`}
               data-navigation-splash="off"
               onClick={(event) => {
                 event.preventDefault();
-                onOpenExhibitor(item.slug);
+                onOpenExhibitor(item.id);
               }}
             >
               <span className="booth-badge">{item.booth}</span>
@@ -758,8 +758,8 @@ export default function ExpoClient({
     });
   };
 
-  const openExhibitor = async (slug: string) => {
-    const exhibitor = exhibitorsData.find((item) => item.slug === slug) ?? null;
+  const openExhibitor = async (id: number) => {
+    const exhibitor = exhibitorsData.find((item) => item.id === id) ?? null;
     if (!exhibitor) return;
     setSelectedExhibitor(exhibitor);
     await changeTab("exhibitor-detail");
