@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import { PagePreloader } from "@/src/components/page-preloader";
+import { trackMetaPixel } from "@/src/components/meta-pixel";
 import { ENQUIRY_OPTIONS } from "@/src/lib/contact-enquiry";
 import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
@@ -100,6 +101,10 @@ export function ContactPageClient({
       setSuccessMessage(
         result.warning || "Thank you. Our team will get back to you shortly.",
       );
+      trackMetaPixel("Lead", {
+        content_name: "Contact enquiry",
+        content_category: payload.enquiryType || "General Enquiry",
+      });
       setIsSubmitted(true);
       event.currentTarget.reset();
       setEnquiryType(getInitialEnquiryType(searchParams.get("enquiryType")));

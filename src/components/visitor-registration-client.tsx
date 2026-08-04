@@ -21,6 +21,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import { PagePreloader } from "@/src/components/page-preloader";
+import { trackMetaPixel } from "@/src/components/meta-pixel";
 import {
   normalizeLocalPhone,
   sanitizeRegistrationInput,
@@ -471,6 +472,10 @@ export function VisitorRegistrationClient({
 
                   const session = await getSession();
                   setReference(session?.user?.registrationReference ?? "");
+                  trackMetaPixel("CompleteRegistration", {
+                    content_name: registration.eventName,
+                    status: "complete",
+                  });
                   setSubmitState("idle");
                   setStep("complete");
                 } catch {
