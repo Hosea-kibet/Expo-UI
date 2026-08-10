@@ -5697,12 +5697,8 @@ footer.site .legal a:hover {
 }
 
 @media (max-width: 600px) {
-  .homepage-page header.nav {
-    display: none;
-  }
-
   .homepage-page .hero-main {
-    padding-top: 16px;
+    padding-top: 104px;
   }
 
   .homepage-page .hero-copy {
