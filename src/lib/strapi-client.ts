@@ -35,11 +35,13 @@ export async function fetchStrapi<T>(
 ): Promise<T> {
   const baseUrl = getStrapiApiBaseUrl().replace(/\/$/, "");
   const normalizedEndpoint = endpoint.replace(/^\//, "");
+  const token = typeof window === "undefined" ? process.env.STRAPI_API_TOKEN : undefined;
 
   const response = await fetch(`${baseUrl}/${normalizedEndpoint}${buildQuery(params)}`, {
     cache: "no-store",
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
 
