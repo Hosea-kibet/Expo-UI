@@ -3,6 +3,7 @@ import Script from "next/script";
 import { NavigationSplash } from "@/src/components/navigation-splash";
 import { MetaPixel } from "@/src/components/meta-pixel";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.agriexpo.africa";
 
@@ -130,6 +131,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <MetaPixel />
         <NavigationSplash />
         {children}
+        <Analytics />
       </body>
     </html>
   );
