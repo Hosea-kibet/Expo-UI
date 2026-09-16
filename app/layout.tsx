@@ -60,6 +60,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             style={{ display: "none", visibility: "hidden" }}
           />
         </noscript>
+        {/* Configure this GA4 property here only; adding it to GTM too would duplicate tracking. */}
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-PS7P029RLQ');
+          `}
+        </Script>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-PS7P029RLQ"
+          strategy="afterInteractive"
+        />
         <Script id="meta-pixel-base" strategy="afterInteractive">
           {`
             !function(f,b,e,v,n,t,s)
