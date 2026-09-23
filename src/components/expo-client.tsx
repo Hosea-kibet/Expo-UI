@@ -637,7 +637,7 @@ export default function ExpoClient({
         cleanup.push(() => document.removeEventListener("click", onDocument));
       }
 
-      const target = new Date("2026-10-27T00:00:00");
+      const target = new Date("2026-10-23T00:00:00");
       const diff = Math.ceil((target.getTime() - Date.now()) / 86400000);
       const daysEl = document.getElementById("days-hero");
       if (daysEl) {
