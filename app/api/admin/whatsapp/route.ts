@@ -9,10 +9,7 @@ import {
   type AttendeeRecord,
 } from "@/src/lib/server/strapi-admin";
 import { getAdminTokenFromRequest } from "@/src/lib/server/admin-session";
-import {
-  filterAttendeesForMessage,
-  type AttendeeMessageFilters,
-} from "@/src/lib/attendee-message-filters";
+import type { AttendeeMessageFilters } from "@/src/lib/attendee-message-filters";
 
 function unauthorized() {
   return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
@@ -44,6 +41,7 @@ export async function POST(request: NextRequest) {
       attendeeDocumentId?: string;
       message?: string;
       filters?: Partial<AttendeeMessageFilters>;
+      search?: string;
     };
     const mode = body.mode === "single" ? "single" : "all";
     const message = String(body.message ?? "").trim();
@@ -64,10 +62,10 @@ export async function POST(request: NextRequest) {
       }
       attendees = [attendee];
     } else {
-      attendees = filterAttendeesForMessage(
-        await listAllAttendees(),
-        body.filters,
-      );
+      attendees = await listAllAttendees(undefined, {
+        search: String(body.search ?? "").trim(),
+        filters: body.filters,
+      });
     }
 
     if (attendees.length === 0) {

@@ -1,5 +1,7 @@
 import type { PendingRegistration } from "@/src/lib/registration";
 import { normalizeLocalPhone, normalizePhone } from "@/src/lib/registration";
+import { normalizeAttendeeMessageFilters } from "@/src/lib/attendee-message-filters";
+import type { AttendeeMessageFilters } from "@/src/lib/attendee-message-filters";
 
 export type AttendeeRecord = {
   id: number;
@@ -101,6 +103,8 @@ export type AttendeeListParams = {
   page?: number;
   pageSize?: number;
   search?: string;
+  filters?: Partial<AttendeeMessageFilters>;
+  hasVisitorPass?: boolean;
 };
 
 export type AttendeeListResult = {
@@ -335,28 +339,43 @@ export async function getAttendeeByDocumentId(documentId: string, jwt?: string) 
 
 export async function listAttendees(
   jwt?: string,
-  { page = 1, pageSize = 25, search = "" }: AttendeeListParams = {},
+  { page = 1, pageSize = 20, search = "", filters, hasVisitorPass }: AttendeeListParams = {},
 ): Promise<AttendeeListResult> {
   const params = new URLSearchParams({
     "pagination[page]": String(Math.max(1, page)),
     "pagination[pageSize]": String(Math.min(100, Math.max(1, pageSize))),
-    sort: "registeredAt:desc",
+    "sort[0]": "registeredAt:desc",
+    "sort[1]": "id:desc",
   });
 
   const normalizedSearch = search.trim();
 
   if (normalizedSearch) {
-    const searchFields = ["firstName", "lastName", "email", "company", "notes"];
-
-    searchFields.forEach((field, index) => {
-      params.set(`filters[$or][${index}][${field}][$containsi]`, normalizedSearch);
+    const searchFields = [
+      "firstName", "lastName", "email", "phone", "fullPhoneNumber",
+      "registrationReference", "company", "jobTitle", "country", "city", "notes",
+    ];
+    normalizedSearch.split(/\s+/).forEach((term, termIndex) => {
+      searchFields.forEach((field, fieldIndex) => {
+        params.set(`filters[$and][${termIndex}][$or][${fieldIndex}][${field}][$containsi]`, term);
+      });
     });
   }
 
+  Object.entries(normalizeAttendeeMessageFilters(filters)).forEach(([field, value]) => {
+    if (value) params.set(`filters[${field}][$eqi]`, value);
+  });
+  if (hasVisitorPass) {
+    params.set("filters[registrationReference][$notNull]", "true");
+    params.set("filters[registrationReference][$ne]", "");
+    params.set("filters[registrationStatus][$eqi]", "verified");
+  }
+
   const path = `/attendees?${params.toString()}`;
+  const init = { signal: AbortSignal.timeout(15_000) };
   const result = jwt
-    ? await strapiJwtRequest<StrapiPaginatedCollectionResponse<AttendeeRecord>>(path, jwt)
-    : await strapiRequest<StrapiPaginatedCollectionResponse<AttendeeRecord>>(path);
+    ? await strapiJwtRequest<StrapiPaginatedCollectionResponse<AttendeeRecord>>(path, jwt, init)
+    : await strapiRequest<StrapiPaginatedCollectionResponse<AttendeeRecord>>(path, init);
 
   const pagination = result.meta?.pagination ?? {
     page: Math.max(1, page),
@@ -372,22 +391,19 @@ export async function listAttendees(
   };
 }
 
-export async function listAllAttendees(jwt?: string) {
-  const attendees: AttendeeRecord[] = [];
-  let page = 1;
-  let pageCount = 1;
+export async function listAllAttendees(jwt?: string, params: Pick<AttendeeListParams, "search" | "filters"> = {}) {
+  const firstPage = await listAttendees(jwt, { ...params, page: 1, pageSize: 100 });
+  const attendees = [...firstPage.attendees];
+  const batchSize = 4;
 
-  do {
-    const result = await listAttendees(jwt, {
-      page,
-      pageSize: 100,
-      search: "",
-    });
-
-    attendees.push(...result.attendees);
-    pageCount = result.pagination.pageCount;
-    page += 1;
-  } while (page <= pageCount);
+  for (let page = 2; page <= firstPage.pagination.pageCount; page += batchSize) {
+    const pages = Array.from(
+      { length: Math.min(batchSize, firstPage.pagination.pageCount - page + 1) },
+      (_, index) => listAttendees(jwt, { ...params, page: page + index, pageSize: 100 }),
+    );
+    const results = await Promise.all(pages);
+    results.forEach((result) => attendees.push(...result.attendees));
+  }
 
   return attendees;
 }

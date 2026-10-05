@@ -1,13 +1,7 @@
 import type { PendingRegistration } from "@/src/lib/registration";
 import { generateOtpCode, hashOtp, verifyOtpHash } from "@/src/lib/server/otp";
-import {
-  sendRegistrationConfirmationEmail,
-  sendRegistrationOtpEmail,
-} from "@/src/lib/server/mailer";
-import {
-  sendRegistrationSms,
-  sendRegistrationWhatsApp,
-} from "@/src/lib/server/attendee-messaging";
+import { sendRegistrationOtpEmail } from "@/src/lib/server/mailer";
+import { sendVisitorPassNotifications } from "@/src/lib/server/registration-notifications";
 import {
   attendeePayloadFromRegistration,
   createAttendee,
@@ -192,24 +186,12 @@ export async function verifyAttendeeOtp(email: string, otp: string) {
     throw new Error("Strapi did not generate a registration reference after verification.");
   }
 
-  const notificationResults = await Promise.allSettled([
-    sendRegistrationConfirmationEmail({
-      email: verifiedAttendee.email,
-      firstName: verifiedAttendee.firstName,
-      lastName: verifiedAttendee.lastName,
-      registrationReference: verifiedAttendee.registrationReference,
-    }),
-    sendRegistrationSms(verifiedAttendee),
-    sendRegistrationWhatsApp(verifiedAttendee),
-  ]);
-
-  const channels = ["Email", "SMS", "WhatsApp"];
-  notificationResults.forEach((result, index) => {
-    if (result.status === "rejected") {
-      const message = result.reason instanceof Error ? result.reason.message : String(result.reason);
-      console.error(`[registration] ${channels[index]} failed independently: ${message}`);
+  const notificationResults = await sendVisitorPassNotifications(verifiedAttendee);
+  notificationResults.forEach((result) => {
+    if (result.status === "failed") {
+      console.error(`[registration] ${result.channel} failed independently: ${result.error}`);
     } else {
-      console.info(`[registration] ${channels[index]} sent successfully.`);
+      console.info(`[registration] ${result.channel} sent successfully.`);
     }
   });
 

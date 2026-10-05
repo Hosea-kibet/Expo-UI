@@ -6918,12 +6918,18 @@ header.nav.scrolled .logo-mark-icon {
   margin-bottom: 1rem;
 }
 
-.admin-search-input {
+.admin-search-field .admin-search-input {
+  flex: 1;
+  min-width: 0;
   border: 0;
+  outline: 0;
+  box-shadow: none;
   background: transparent;
-  max-width: 340px;
+  border-radius: 0;
+  max-width: none;
   min-height: auto;
   padding: 0;
+  font: inherit;
 }
 
 .admin-search-field {
@@ -6937,7 +6943,17 @@ header.nav.scrolled .logo-mark-icon {
   background: #fff;
 }
 
+.admin-search-field:focus-within {
+  border-color: rgba(73, 132, 74, 0.6);
+  box-shadow: 0 0 0 3px rgba(73, 132, 74, 0.12);
+}
+
+.admin-resend-search {
+  width: min(100%, 560px);
+}
+
 .admin-search-field svg {
+  flex-shrink: 0;
   width: 1rem;
   height: 1rem;
   color: rgba(29, 36, 22, 0.6);
@@ -7058,7 +7074,8 @@ header.nav.scrolled .logo-mark-icon {
   color: rgba(29, 36, 22, 0.72);
 }
 
-.admin-blast-filter-grid select {
+.admin-blast-filter-grid select,
+.admin-blast-filter-grid input {
   width: 100%;
   min-height: 46px;
   padding: 0.72rem 0.85rem;
@@ -7107,6 +7124,53 @@ header.nav.scrolled .logo-mark-icon {
   justify-content: center;
   gap: 0.75rem;
   min-height: 96px;
+}
+
+.admin-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.admin-resend-selection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.admin-resend-card {
+  min-width: 0;
+}
+
+.admin-resend-card input[type="checkbox"] {
+  width: 1.15rem;
+  height: 1.15rem;
+  min-height: 0;
+  padding: 0;
+  accent-color: #e26f2d;
+}
+
+.admin-resend-selection .btn {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.admin-resend-failures {
+  margin-top: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-pagination-actions,
+.admin-pagination-page {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .spin {
@@ -7220,15 +7284,12 @@ header.nav.scrolled .logo-mark-icon {
 
   .admin-attendees-actions,
   .admin-attendees-actions .btn,
-  .admin-pagination-actions,
-  .admin-pagination-actions .btn,
   .admin-row-actions,
   .admin-row-actions .btn {
     width: 100%;
   }
 
-  .admin-row-actions,
-  .admin-pagination-actions {
+  .admin-row-actions {
     flex-direction: column;
     align-items: stretch;
   }

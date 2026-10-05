@@ -13,10 +13,12 @@ import {
   RefreshCw,
   ScanLine,
   Search,
+  Send,
   ShieldCheck,
 } from "lucide-react";
 import { type ChangeEvent, useDeferredValue, useEffect, useRef, useState } from "react";
 import { PageBodyClass } from "@/src/components/page-body-class";
+import { AdminPagination } from "@/src/components/admin-pagination";
 import type { AttendeeListResult, AttendeeRecord } from "@/src/lib/server/strapi-admin";
 
 type AttendanceStatus = AttendeeRecord["attendanceStatus"];
@@ -71,6 +73,7 @@ export function AdminAttendeesClient({
   const deferredSearch = useDeferredValue(searchInput);
   const hasMountedRef = useRef(false);
   const requestSequenceRef = useRef(0);
+  const requestControllerRef = useRef<AbortController | null>(null);
   const scanAutoSubmitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scanBurstRef = useRef({
     count: 0,
@@ -82,6 +85,7 @@ export function AdminAttendeesClient({
       if (scanAutoSubmitTimeoutRef.current) {
         clearTimeout(scanAutoSubmitTimeoutRef.current);
       }
+      requestControllerRef.current?.abort();
     };
   }, []);
 
@@ -103,11 +107,10 @@ export function AdminAttendeesClient({
       return;
     }
 
-    setSearch(normalizedSearch);
-    setPagination((current) => ({
-      ...current,
-      page: 1,
-    }));
+    const timeout = setTimeout(() => {
+      setSearch(normalizedSearch);
+    }, 300);
+    return () => clearTimeout(timeout);
   }, [deferredSearch, search]);
 
   useEffect(() => {
@@ -131,6 +134,9 @@ export function AdminAttendeesClient({
   async function fetchAttendees(page: number, query: string, showLoader = true) {
     const requestId = requestSequenceRef.current + 1;
     requestSequenceRef.current = requestId;
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
 
     if (showLoader) {
       setIsTableLoading(true);
@@ -139,7 +145,7 @@ export function AdminAttendeesClient({
     try {
       const params = new URLSearchParams({
         page: String(page),
-        pageSize: String(pagination.pageSize),
+        pageSize: "20",
       });
 
       if (query.trim()) {
@@ -148,6 +154,7 @@ export function AdminAttendeesClient({
 
       const response = await fetch(`/api/admin/attendees?${params.toString()}`, {
         cache: "no-store",
+        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20_000)]),
       });
 
       const result = (await response.json()) as {
@@ -172,6 +179,9 @@ export function AdminAttendeesClient({
       setNotesDrafts(
         Object.fromEntries(result.attendees.map((attendee) => [attendee.documentId, attendee.notes ?? ""])),
       );
+    } catch (error) {
+      if (controller.signal.aborted || requestSequenceRef.current !== requestId) return;
+      throw error;
     } finally {
       if (requestSequenceRef.current === requestId) {
         setIsTableLoading(false);
@@ -463,6 +473,9 @@ export function AdminAttendeesClient({
           <Link className="btn btn-secondary" href="/admin/whatsapp">
             <MessagesSquare /> WhatsApp
           </Link>
+          <Link className="btn btn-secondary" href="/admin/resend">
+            <Send /> Resend
+          </Link>
           <button className="btn btn-secondary" type="button" disabled={isRefreshing} onClick={() => void refreshAttendees()}>
             {isRefreshing ? <LoaderCircle className="spin" /> : <RefreshCw />}
             {isRefreshing ? "Refreshing..." : "Refresh"}
@@ -537,7 +550,7 @@ export function AdminAttendeesClient({
                 className="admin-search-input"
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Search by name, email, company"
+                placeholder="Search name, email, phone, company or reference"
               />
             </label>
           </div>
@@ -601,7 +614,7 @@ export function AdminAttendeesClient({
                   <tr>
                     <td colSpan={4} className="admin-empty-cell">
                       {search
-                        ? "No attendees matched that search. Try a name, email, or company."
+                        ? "No attendees matched that search. Try a name, email, phone, company or reference."
                         : "No attendees found yet."}
                     </td>
                   </tr>
@@ -619,6 +632,17 @@ export function AdminAttendeesClient({
               </tbody>
             </table>
           </div>
+          <AdminPagination
+            page={pagination.page}
+            pageSize={20}
+            total={pagination.total}
+            isLoading={isTableLoading}
+            onPageChange={(page) => {
+              void fetchAttendees(page, search).catch((error) => {
+                setAlert({ type: "error", message: error instanceof Error ? error.message : "Unable to load attendees." });
+              });
+            }}
+          />
         </section>
       </main>
     </>

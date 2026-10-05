@@ -35,6 +35,7 @@ export const authOptions: NextAuthOptions = {
           id: attendee.documentId,
           email: attendee.email,
           name: `${attendee.firstName} ${attendee.lastName}`.trim(),
+          role: "attendee",
           registrationReference: attendee.registrationReference,
         };
       },
@@ -74,6 +75,10 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
+      // Older sessions stored the Strapi JWT in chunked cookies. Remove it on
+      // renewal as well as login, since server requests now use the API token.
+      delete token.strapiJwt;
+
       if (user) {
         token.authProvider =
           user.role === "attendee"

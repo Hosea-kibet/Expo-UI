@@ -20,13 +20,18 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const page = Number(searchParams.get("page") ?? "1");
-    const pageSize = Number(searchParams.get("pageSize") ?? "10");
+    const pageSize = Number(searchParams.get("pageSize") ?? "20");
     const search = searchParams.get("q") ?? searchParams.get("search") ?? "";
 
     const result = await listAttendees(undefined, {
       page: Number.isFinite(page) ? page : 1,
-      pageSize: Number.isFinite(pageSize) ? pageSize : 10,
+      pageSize: Number.isFinite(pageSize) ? pageSize : 20,
       search,
+      hasVisitorPass: searchParams.get("hasVisitorPass") === "true",
+      filters: Object.fromEntries(
+        ["attendanceStatus", "registrationStatus", "country", "city", "gender", "company"]
+          .map((field) => [field, searchParams.get(field) ?? ""]),
+      ),
     });
 
     return NextResponse.json({ ok: true, ...result });

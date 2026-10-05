@@ -17,7 +17,7 @@ export default async function AdminLoginPage() {
       initialAttendees={[]}
       initialPagination={{
         page: 1,
-        pageSize: 10,
+        pageSize: 20,
         pageCount: 1,
         total: 0,
       }}
