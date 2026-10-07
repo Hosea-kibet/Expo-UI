@@ -279,6 +279,28 @@ function normalizeOverviewCategories(value: unknown) {
     .filter((item): item is string => typeof item === "string" && item.length > 0);
 }
 
+export async function getExpoRegistrationDetails(): Promise<
+  Pick<ExpoPageSnapshot, "dates" | "venue">
+> {
+  const response = await getExpoPageContent();
+  const details = {
+    dates: typeof response.data?.dates === "string" ? response.data.dates : "",
+    venue: typeof response.data?.venue === "string" ? response.data.venue : "",
+  };
+  const missingFields: string[] = [];
+
+  if (!details.dates.trim()) missingFields.push("expo-page.dates");
+  if (!details.venue.trim()) missingFields.push("expo-page.venue");
+
+  if (missingFields.length > 0) {
+    throw new Error(
+      `Expo registration content is incomplete in Strapi. Missing fields: ${missingFields.join(", ")}`,
+    );
+  }
+
+  return details;
+}
+
 export async function getExpoCmsSnapshot(): Promise<ExpoCmsSnapshot> {
   const [expoPageResponse, exhibitorsResponse, supportUnitsResponse, programmeDaysResponse] =
     await Promise.all([

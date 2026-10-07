@@ -302,6 +302,7 @@ export function VisitorRegistrationClient({
                       Country <span className="required-mark">*</span>
                       <input type="hidden" name="country" value={selectedCountry.value} />
                       <Select<CountryOption, false>
+                        instanceId="visitor-registration-country"
                         classNamePrefix="country-select"
                         isSearchable
                         options={countryOptions}
@@ -327,6 +328,7 @@ export function VisitorRegistrationClient({
                       City <span className="required-mark">*</span>
                       <input type="hidden" name="city" value={selectedCity?.value ?? ""} />
                       <Select<CityOption, false>
+                        instanceId="visitor-registration-city"
                         classNamePrefix="country-select"
                         isSearchable
                         isDisabled={cityOptions.length === 0}

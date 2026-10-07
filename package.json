@@ -6,7 +6,8 @@
     "dev": "WATCHPACK_POLLING=true next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:registration": "node scripts/test-registration.cjs"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.9.1",
