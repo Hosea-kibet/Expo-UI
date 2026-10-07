@@ -1,10 +1,9 @@
 import {
   ExhibitorDetailPageContent,
   generateExhibitorMetadata,
-  generateExhibitorStaticParams,
 } from "@/src/components/exhibitor-detail-page";
 
-export const generateStaticParams = generateExhibitorStaticParams;
+export const dynamic = "force-dynamic";
 export const generateMetadata = generateExhibitorMetadata;
 
 export default function ExhibitorDetailAliasPage({

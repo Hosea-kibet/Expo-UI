@@ -6,11 +6,6 @@ import { getHomepageSnapshot } from "@/src/lib/homepage-cms";
 
 type Params = { id: string };
 
-export async function generateExhibitorStaticParams() {
-  const snapshot = await getExpoCmsSnapshot();
-  return snapshot.exhibitors.map((item) => ({ id: String(item.id) }));
-}
-
 export async function generateExhibitorMetadata({
   params,
 }: {
@@ -28,12 +23,13 @@ export async function ExhibitorDetailPageContent({
   params: Promise<Params>;
 }) {
   const { id } = await params;
-  const [exhibitor, expoSnapshot, homepage] = await Promise.all([
-    getExpoExhibitorById(id),
+  const exhibitor = await getExpoExhibitorById(id);
+  if (!exhibitor) notFound();
+
+  const [expoSnapshot, homepage] = await Promise.all([
     getExpoCmsSnapshot(),
     getHomepageSnapshot(),
   ]);
-  if (!exhibitor) notFound();
 
   const daysToGo = Math.ceil((new Date("2026-10-23T00:00:00").getTime() - Date.now()) / 86400000);
   const countdownLabel = daysToGo > 0 ? `${daysToGo} days to go` : daysToGo === 0 ? "Today" : "See you in 2027";

@@ -380,7 +380,6 @@ export async function getExpoCmsSnapshot(): Promise<ExpoCmsSnapshot> {
   if (!snapshot.expoPage.overviewIntro) missingFields.push("expo-page.overviewIntro");
   if (!snapshot.expoPage.overviewBody) missingFields.push("expo-page.overviewBody");
   if (!snapshot.expoPage.floorPlanSrc) missingFields.push("expo-page.floorPlan");
-  if (snapshot.exhibitors.length === 0) missingFields.push("exhibitors");
   if (snapshot.supportUnits.length === 0) missingFields.push("support-units");
   if (snapshot.supportUnits.some((item) => !item.logoSrc)) missingFields.push("support-units.logo");
   if (snapshot.programmeDays.length === 0) missingFields.push("programme-days");
@@ -393,10 +392,14 @@ export async function getExpoCmsSnapshot(): Promise<ExpoCmsSnapshot> {
 }
 
 export async function getExpoExhibitorById(id: string | number) {
-  const snapshot = await getExpoCmsSnapshot();
   const exhibitorId = typeof id === "number" ? id : Number(id);
   if (!Number.isInteger(exhibitorId) || exhibitorId <= 0) return null;
-  return snapshot.exhibitors.find((item) => item.id === exhibitorId) ?? null;
+
+  const response = await getExhibitorsContent({
+    "filters[id][$eq]": String(exhibitorId),
+  });
+  const record = Array.isArray(response.data) ? response.data[0] : undefined;
+  return record ? normalizeExhibitor(record) : null;
 }
 
 export async function getFilteredExhibitors({
