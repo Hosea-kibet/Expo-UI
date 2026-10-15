@@ -14,6 +14,8 @@ import {
   MessageSquare,
   Store,
 } from "lucide-react";
+import { PostponementNotice } from "@/src/components/postponement-notice";
+import { EXPO_STATUS } from "@/src/lib/event-status";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import { ExpoFooter } from "@/src/components/expo-detail-footer";
 import type { Exhibitor } from "@/src/lib/expo-types";
@@ -22,7 +24,6 @@ import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
 type ExhibitorDetailClientProps = {
   brochureHref: string;
-  countdownLabel: string;
   exhibitor: Exhibitor;
   expoPage: ExpoCmsSnapshot["expoPage"];
   homepage: HomepageSnapshot;
@@ -30,7 +31,6 @@ type ExhibitorDetailClientProps = {
 
 export function ExhibitorDetailClient({
   brochureHref,
-  countdownLabel,
   exhibitor,
   expoPage,
   homepage,
@@ -151,14 +151,18 @@ export function ExhibitorDetailClient({
         <div className="wrap hero-inner">
           <h1 className="hero-title">2026 - Africa International<br />Agricultural Expo</h1>
           <div className="hero-strip">
-            <span>{expoPage.dates.replace("October", "Oct")}</span>
+            <span>{expoPage.dates}</span>
             <span className="sep">·</span>
             <span>{expoPage.venue.replace(", Kenya", "")}</span>
             <span className="sep">·</span>
-            <span id="days-hero">{countdownLabel}</span>
+            <span>{EXPO_STATUS.label}</span>
           </div>
         </div>
       </section>
+
+      <div className="wrap postponement-container">
+        <PostponementNotice compact />
+      </div>
 
       <div className="wrap expo-wrap">
         <div className="expo-body">

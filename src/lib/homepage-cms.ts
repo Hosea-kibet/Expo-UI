@@ -1,3 +1,4 @@
+import { EXPO_STATUS } from "@/src/lib/event-status";
 import { getHomepageContent } from "@/src/lib/strapi-content";
 import {
   EXPO_CONTACT_EMAIL,
@@ -225,5 +226,16 @@ export async function getHomepageSnapshot(): Promise<HomepageSnapshot> {
     throw new Error(`Homepage content is incomplete in Strapi. Missing fields: ${missingFields.join(", ")}`);
   }
 
-  return snapshot;
+  return {
+    ...snapshot,
+    topbarTagline: EXPO_STATUS.title,
+    heroEyebrowSecondary: EXPO_STATUS.label,
+    subtitle: EXPO_STATUS.summary,
+    eventStatus: EXPO_STATUS.label,
+    eventDates: EXPO_STATUS.dates,
+    registrationEyebrow: "Event update",
+    registrationTitle: EXPO_STATUS.title,
+    registrationDates: EXPO_STATUS.dates,
+    registrationBody: `${EXPO_STATUS.dateUpdate} Thank you for your understanding and continued support.`,
+  };
 }

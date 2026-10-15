@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import QRCode from "qrcode";
+import { EXPO_STATUS } from "@/src/lib/event-status";
 import {
   EXPO_CONTACT_EMAIL,
   EXPO_CONTACT_PHONE,
@@ -135,7 +136,7 @@ export async function sendRegistrationConfirmationEmail({
       "",
       "EVENT DETAILS",
       "Theme: Gathering Global Agricultural Wisdom to Promote Modernization of African Agriculture",
-      "Dates: 23–25 October 2026",
+      `Status: ${EXPO_STATUS.label}. Dates: ${EXPO_STATUS.dates}. ${EXPO_STATUS.dateUpdate}`,
       "Venue: Kenyatta International Convention Centre (KICC), Nairobi, Kenya",
       "",
       "ENTRY INSTRUCTIONS",
@@ -183,7 +184,7 @@ export async function sendRegistrationConfirmationEmail({
 
             <h2 style="margin:0 0 16px;font-size:22px;color:#173422">Event Details</h2>
             <p style="margin:0 0 16px"><strong>Theme</strong><br /><em>Gathering Global Agricultural Wisdom to Promote Modernization of African Agriculture</em></p>
-            <p style="margin:0 0 16px"><strong>Dates</strong><br /><strong>23–25 October 2026</strong></p>
+            <p style="margin:0 0 16px"><strong>${EXPO_STATUS.label}</strong><br />Dates: ${EXPO_STATUS.dates}. ${EXPO_STATUS.dateUpdate}</p>
             <p style="margin:0 0 26px"><strong>Venue</strong><br /><strong>Kenyatta International Convention Centre (KICC), Nairobi, Kenya</strong></p>
 
             <h2 style="margin:0 0 16px;font-size:22px;color:#173422">Entry Instructions</h2>

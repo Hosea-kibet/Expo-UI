@@ -31,8 +31,6 @@ export async function ExhibitorDetailPageContent({
     getHomepageSnapshot(),
   ]);
 
-  const daysToGo = Math.ceil((new Date("2026-10-23T00:00:00").getTime() - Date.now()) / 86400000);
-  const countdownLabel = daysToGo > 0 ? `${daysToGo} days to go` : daysToGo === 0 ? "Today" : "See you in 2027";
   const fallbackBrochureHref = `data:text/plain;charset=utf-8,${encodeURIComponent(
     `${exhibitor.name}\n${exhibitor.booth}\n\n${exhibitor.intro}\n\nContact: ${exhibitor.contact}\n${exhibitor.phone}\n${exhibitor.email}`,
   )}`;
@@ -41,7 +39,6 @@ export async function ExhibitorDetailPageContent({
   return (
     <ExhibitorDetailClient
       brochureHref={brochureHref}
-      countdownLabel={countdownLabel}
       exhibitor={exhibitor}
       expoPage={expoSnapshot.expoPage}
       homepage={homepage}

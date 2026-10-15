@@ -13,10 +13,11 @@ import {
   MapPin,
   Phone,
   Store,
-  Ticket,
   Youtube,
 } from "lucide-react";
+import { PostponementNotice } from "@/src/components/postponement-notice";
 import { LegalFooterLinks } from "@/src/components/legal-links";
+import { EXPO_STATUS } from "@/src/lib/event-status";
 import type { HomepageSnapshot } from "@/src/lib/homepage-cms";
 
 const pillIcons = [Store, Handshake, CalendarDays] as const;
@@ -111,29 +112,6 @@ export default function HomepageClient({
         cleanup.push(() => document.removeEventListener("click", onDocumentClick));
         cleanup.push(() => window.removeEventListener("resize", onResize));
       }
-
-      const updateCountdown = () => {
-        const target = new Date("2026-10-23T00:00:00");
-        const diff = Math.ceil((target.getTime() - Date.now()) / 86400000);
-        const el = document.getElementById("days");
-        const label = document.getElementById("days-label");
-        if (!el || !label) return;
-
-        if (diff > 0) {
-          el.textContent = `${diff}`;
-          label.textContent = diff === 1 ? "day to go" : "days to go";
-          el.style.fontSize = "";
-        } else if (diff === 0) {
-          el.textContent = "Today";
-          label.textContent = "is the day";
-          el.style.fontSize = "15px";
-        } else {
-          el.textContent = "Thank you";
-          label.textContent = "see you next year";
-          el.style.fontSize = "15px";
-        }
-      };
-      updateCountdown();
 
       const splitToChars = (el: Element): HTMLSpanElement[] => {
         let chars: HTMLSpanElement[] = [];
@@ -660,16 +638,14 @@ export default function HomepageClient({
                       </div>
                     </div>
                   </div>
-                  <div className="countdown">
-                    <b id="days">—</b> <span id="days-label">days to go</span>
-                  </div>
+                  <p className="postponement-ticket-status">{EXPO_STATUS.dateUpdate}</p>
                 </div>
                 <div className="perf" />
                 <div className="bot">
                   <div className="actions">
-                    <Link className="btn btn-accent lg block" href="/visitor-registration">
-                      <Ticket /> Register Now
-                    </Link>
+                    <a className="btn btn-accent lg block" href="#postponement-notice">
+                      <CalendarDays /> Read official notice
+                    </a>
                     <div className="or">or</div>
                     <Link className="btn btn-ghost block" href="/2026-aiae-expo">
                       Explore the Expo <ArrowRight style={{ width: 16, height: 16 }} />
@@ -681,6 +657,8 @@ export default function HomepageClient({
           </div>
         </div>
       </div>
+
+      <PostponementNotice />
 
       <div className="news">
         <div className="wrap grid event-register-cta">

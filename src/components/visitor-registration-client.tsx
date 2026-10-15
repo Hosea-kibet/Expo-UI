@@ -19,6 +19,8 @@ import {
   Plus,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { PostponementNotice } from "@/src/components/postponement-notice";
+import { EXPO_STATUS } from "@/src/lib/event-status";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import { PagePreloader } from "@/src/components/page-preloader";
 import { trackMetaPixel } from "@/src/components/meta-pixel";
@@ -197,6 +199,7 @@ export function VisitorRegistrationClient({
         </aside>
 
         <section className="register-card" aria-labelledby="register-title">
+          <PostponementNotice compact />
           {step === "form" ? (
             <>
               <div className="register-card-head">
@@ -601,7 +604,7 @@ export function VisitorRegistrationClient({
               <div className="register-success-event" aria-label="Event details">
                 <div>
                   <CalendarDays />
-                  <strong>23–25 October 2026</strong>
+                  <strong>{EXPO_STATUS.dates}</strong>
                 </div>
                 <div>
                   <MapPin />

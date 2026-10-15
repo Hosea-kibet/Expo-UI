@@ -1,4 +1,5 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { EXPO_STATUS } from "@/src/lib/event-status";
 import type { AttendeeRecord } from "@/src/lib/server/strapi-admin";
 import { attendeeSmsAddress, sendBelioSms } from "@/src/lib/server/belio-sms";
 import { createVisitorPassPdf } from "@/src/lib/server/visitor-pass";
@@ -130,7 +131,7 @@ async function uploadRegistrationVisitorPass(attendee: RegistrationAttendee) {
   const visitorPassData = {
     visitor_name: `${attendee.firstName} ${attendee.lastName}`.trim(),
     reference_id: attendee.registrationReference,
-    dates: "23–25 October 2026",
+    dates: EXPO_STATUS.passDates,
     venue: "Kenyatta International Convention Centre (KICC), Nairobi, Kenya",
   };
   const visitorPass = await createVisitorPassPdf(visitorPassData);
@@ -161,7 +162,7 @@ export function registrationSmsMessage(registrationReference: string) {
   return `2026 AIAE: Your registration is confirmed!
 Reference ID: ${registrationReference}
 Your Visitor Pass with your QR Code has been sent to your email and WhatsApp. Please present your QR Code or Reference ID at the registration desk for entry.
-23–25 October 2026 at KICC, Nairobi`;
+${EXPO_STATUS.label}. ${EXPO_STATUS.dates}. ${EXPO_STATUS.dateUpdate}`;
 }
 
 export async function sendRegistrationWhatsApp(attendee: RegistrationAttendee) {

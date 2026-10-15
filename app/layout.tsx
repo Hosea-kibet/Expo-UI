@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
+import { EXPO_STATUS } from "@/src/lib/event-status";
 import { NavigationSplash } from "@/src/components/navigation-splash";
 import { MetaPixel } from "@/src/components/meta-pixel";
 import "./globals.css";
-import { Analytics } from "@vercel/analytics/next";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.agriexpo.africa";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "2026 Africa International Agricultural Expo | AIAE",
-  description:
-    "Join the 2026 Africa International Agricultural Expo from 23–25 October at KICC, Nairobi. Discover exhibitors, speakers, partnerships, and visitor information.",
+  title: EXPO_STATUS.metadataTitle,
+  description: EXPO_STATUS.summary,
   applicationName: "Africa International Agricultural Expo",
   alternates: {
     canonical: "/",
@@ -24,16 +24,18 @@ export const metadata: Metadata = {
     type: "website",
     url: "/",
     siteName: "Africa International Agricultural Expo",
-    title: "2026 Africa International Agricultural Expo | AIAE",
-    description:
-      "Join the 2026 Africa International Agricultural Expo from 23–25 October at KICC, Nairobi. Explore exhibitors, speakers, partnerships, and visitor information.",
+    title: EXPO_STATUS.metadataTitle,
+    description: EXPO_STATUS.summary,
     locale: "en_KE",
+    images: [
+      { url: EXPO_STATUS.poster, width: 1080, height: 1350, alt: EXPO_STATUS.title },
+    ],
   },
   twitter: {
-    card: "summary",
-    title: "2026 Africa International Agricultural Expo | AIAE",
-    description:
-      "Join the 2026 Africa International Agricultural Expo from 23–25 October at KICC, Nairobi.",
+    card: "summary_large_image",
+    images: [EXPO_STATUS.poster],
+    title: EXPO_STATUS.metadataTitle,
+    description: EXPO_STATUS.summary,
   },
 };
 
@@ -111,16 +113,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   "@type": "Event",
                   name: "2026 Africa International Agricultural Expo",
                   alternateName: "2026 AIAE",
+                  description: EXPO_STATUS.summary,
                   startDate: "2026-10-23",
                   endDate: "2026-10-25",
-                  eventStatus: "https://schema.org/EventScheduled",
+                  eventStatus: "https://schema.org/EventPostponed",
                   eventAttendanceMode:
                     "https://schema.org/OfflineEventAttendanceMode",
                   url: new URL("/", siteUrl).toString(),
-                  image: new URL(
-                    "/assets/logo-wordmark-dark.svg",
-                    siteUrl,
-                  ).toString(),
+                  image: new URL(EXPO_STATUS.poster, siteUrl).toString(),
                   location: {
                     "@type": "Place",
                     name: "Kenyatta International Convention Centre (KICC)",

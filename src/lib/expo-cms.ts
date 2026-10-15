@@ -1,3 +1,4 @@
+import { EXPO_STATUS } from "@/src/lib/event-status";
 import {
   getExhibitorsContent,
   getExpoPageContent,
@@ -342,10 +343,7 @@ export async function getExpoCmsSnapshot(): Promise<ExpoCmsSnapshot> {
 
   const snapshot: ExpoCmsSnapshot = {
     expoPage: {
-      dates:
-        expoPageRecord && typeof expoPageRecord.dates === "string"
-          ? expoPageRecord.dates
-          : "",
+      dates: EXPO_STATUS.dates,
       venue:
         expoPageRecord && typeof expoPageRecord.venue === "string"
           ? expoPageRecord.venue
@@ -382,7 +380,6 @@ export async function getExpoCmsSnapshot(): Promise<ExpoCmsSnapshot> {
   if (!snapshot.expoPage.floorPlanSrc) missingFields.push("expo-page.floorPlan");
   if (snapshot.supportUnits.length === 0) missingFields.push("support-units");
   if (snapshot.supportUnits.some((item) => !item.logoSrc)) missingFields.push("support-units.logo");
-  if (snapshot.programmeDays.length === 0) missingFields.push("programme-days");
 
   if (missingFields.length > 0) {
     throw new Error(`Expo content is incomplete in Strapi. Missing fields: ${missingFields.join(", ")}`);

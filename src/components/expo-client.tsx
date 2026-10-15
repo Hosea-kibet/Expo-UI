@@ -23,6 +23,7 @@ import {
   Store,
   Youtube,
 } from "lucide-react";
+import { EXPO_STATUS } from "@/src/lib/event-status";
 import { ExpoOverview } from "@/src/components/expo-overview";
 import { PageBodyClass } from "@/src/components/page-body-class";
 import { LegalFooterLinks } from "@/src/components/legal-links";
@@ -397,7 +398,13 @@ function ExhibitorsPanel({
         </div>
 
         {loadError ? <p className="exhibitor-empty">{loadError}</p> : null}
-        {!loadError && filtered.length === 0 ? <p className="exhibitor-empty">No exhibitors match your search.</p> : null}
+        {!loadError && filtered.length === 0 ? (
+          <p className="exhibitor-empty">
+            {exhibitorsData.length === 0 && !query && !boothQuery && country === "all"
+              ? "Exhibitor information will be shared in due course."
+              : "No exhibitors match your search."}
+          </p>
+        ) : null}
 
         <div className="section-sep" />
         <div className="cta-row">
@@ -527,62 +534,14 @@ function FloorPlanPanel({
   );
 }
 
-function ProgrammePanel({
-  active,
-  programmeDaysData,
-}: {
-  active: boolean;
-  programmeDaysData: Array<{
-    id: string;
-    label: string;
-    heading: string;
-    hours: string;
-    sessions: Array<[string, string, string, string]>;
-  }>;
-}) {
-  const [day, setDay] = useState(programmeDaysData[0]?.id ?? "tue");
-
+function ProgrammePanel({ active }: { active: boolean }) {
   return (
     <div className={`panel${active ? " active" : ""}`} id="panel-programme" style={{ display: active ? "block" : "none" }}>
       <div id="programme" className="panel-anchor" aria-hidden="true" />
       <div className="panel-head reveal in">
         <div className="eyebrow">Event Schedule</div>
-        <h1>{programmeDaysData.length} {programmeDaysData.length === 1 ? "Day" : "Days"}, Curated</h1>
-        <p>Keynotes, workshops, B2B networking, and cultural moments — built for decision-makers.</p>
-      </div>
-      <div className="reveal in">
-        <div className="day-tabs" id="day-tabs">
-          {programmeDaysData.map((item) => (
-            <button
-              key={item.id}
-              className={`day-tab${day === item.id ? " active" : ""}`}
-              data-day={item.id}
-              onClick={() => setDay(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-        {programmeDaysData.map((item) => (
-          <div className={`day-content${day === item.id ? " active" : ""}`} id={`day-${item.id}`} key={item.id}>
-            <div className="programme-day-heading">
-              <h2>{item.heading}</h2>
-              <span>{item.hours}</span>
-            </div>
-            <div className="session-list">
-              {item.sessions.map(([time, title, description, tag]) => (
-                <div className="session" key={`${item.id}-${time}-${title}`}>
-                  <div className="session-time">{time}</div>
-                  <div>
-                    <div className="session-title">{title}</div>
-                    <div className="session-desc">{description}</div>
-                    <span className="session-tag">{tag}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+        <h1>Programme update coming soon</h1>
+        <p>The Expo has been postponed, tentatively to early 2027. The updated programme will be shared once the new dates are confirmed.</p>
       </div>
     </div>
   );
@@ -597,7 +556,6 @@ export default function ExpoClient({
 }) {
   const exhibitorsData = initialData.exhibitors;
   const supportUnitsData = initialData.supportUnits;
-  const programmeDaysData = initialData.programmeDays;
   const expoPage = initialData.expoPage;
   const [activeTab, setActiveTab] = useState<ExpoViewTab>("overview");
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
@@ -635,15 +593,6 @@ export default function ExpoClient({
         document.addEventListener("click", onDocument);
         cleanup.push(() => menuToggle.removeEventListener("click", onMenu));
         cleanup.push(() => document.removeEventListener("click", onDocument));
-      }
-
-      const target = new Date("2026-10-23T00:00:00");
-      const diff = Math.ceil((target.getTime() - Date.now()) / 86400000);
-      const daysEl = document.getElementById("days-hero");
-      if (daysEl) {
-        if (diff > 0) daysEl.textContent = `${diff} days to go`;
-        else if (diff === 0) daysEl.textContent = "Today";
-        else daysEl.textContent = "See you in 2027";
       }
 
       const hero = document.querySelector<HTMLElement>(".expo-hero");
@@ -864,11 +813,11 @@ export default function ExpoClient({
         <div className="wrap hero-inner">
           <h1 className="hero-title">2026 - Africa International<br />Agricultural Expo</h1>
           <div className="hero-strip">
-            <span>{expoPage.dates.replace("October", "Oct")}</span>
+            <span>{expoPage.dates}</span>
             <span className="sep">·</span>
             <span>{expoPage.venue.replace(", Kenya", "")}</span>
             <span className="sep">·</span>
-            <span id="days-hero">— days to go</span>
+            <span>{EXPO_STATUS.label}</span>
           </div>
         </div>
       </section>
@@ -937,7 +886,7 @@ export default function ExpoClient({
             <ExhibitorDetailPanel active={activeTab === "exhibitor-detail"} exhibitor={selectedExhibitor} onBack={() => void changeTab("exhibitors")} />
             <SupportUnitsPanel active={activeTab === "support"} onOpenUnit={setSupportUnitModal} units={supportUnitsData} />
             <FloorPlanPanel active={activeTab === "floorplan"} floorPlanSrc={expoPage.floorPlanSrc} venue={expoPage.venue} />
-            <ProgrammePanel active={activeTab === "programme"} programmeDaysData={programmeDaysData} />
+            <ProgrammePanel active={activeTab === "programme"} />
           </div>
         </div>
       </div>

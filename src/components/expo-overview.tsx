@@ -148,7 +148,7 @@ export function ExpoOverview({
           </p>
           <div className="visitor-cta-meta">
             <span>
-              <CalendarDays /> 23–25 October 2026
+              <CalendarDays /> {dates}
             </span>
             <span>
               <MapPin /> KICC, Nairobi

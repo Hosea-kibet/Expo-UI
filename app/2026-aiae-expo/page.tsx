@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
+import { EXPO_STATUS } from "@/src/lib/event-status";
 import ExpoClient from "@/src/components/expo-client";
 import { getExpoCmsSnapshot } from "@/src/lib/expo-cms";
 import { getHomepageSnapshot } from "@/src/lib/homepage-cms";
 
 export const metadata: Metadata = {
-  title: "2026 Africa International Agricultural Expo | AIAE",
-  description:
-    "Explore the 2026 Africa International Agricultural Expo programme, exhibitors, speakers, partners, and visitor information for 23–25 October at KICC, Nairobi.",
+  title: EXPO_STATUS.metadataTitle,
+  description: EXPO_STATUS.summary,
   alternates: {
     canonical: "/2026-aiae-expo",
   },
